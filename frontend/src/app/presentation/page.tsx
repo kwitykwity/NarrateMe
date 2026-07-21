@@ -30,6 +30,9 @@ function PresentationContent() {
   useEffect(() => {
     if (!story) return;
 
+    const controller = new AbortController();
+    let cancelled = false;
+
     async function generatePresentation() {
       try {
         // Step 1: Split story into scenes
@@ -38,6 +41,7 @@ function PresentationContent() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ story }),
+          signal: controller.signal,
         });
 
         if (!scenesRes.ok) {
@@ -45,6 +49,7 @@ function PresentationContent() {
         }
 
         const data: ScenesData = await scenesRes.json();
+        if (cancelled) return;
         setScenesData(data);
         setStatus("generating");
 
@@ -52,32 +57,42 @@ function PresentationContent() {
         const updatedScenes = [...data.scenes];
 
         for (let i = 0; i < updatedScenes.length; i++) {
+          if (cancelled) return;
           const scene = updatedScenes[i];
           try {
             const imageRes = await fetch(`${API_URL}/api/images`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ prompt: scene.image_prompt }),
+              signal: controller.signal,
             });
 
             if (imageRes.ok) {
               const imageData = await imageRes.json();
+              if (cancelled) return;
               updatedScenes[i] = { ...scene, image_url: imageData.image_url };
               setScenesData({ ...data, scenes: [...updatedScenes] });
             }
           } catch {
+            if (cancelled) return;
             // Continue with other images if one fails
           }
         }
 
         setStatus("done");
       } catch (err) {
+        if (cancelled) return;
         setError(err instanceof Error ? err.message : "Something went wrong");
         setStatus("error");
       }
     }
 
     generatePresentation();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [story]);
 
   if (!story) {
