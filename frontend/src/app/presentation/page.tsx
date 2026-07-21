@@ -30,8 +30,6 @@ function PresentationContent() {
   useEffect(() => {
     if (!story) return;
 
-    const decodedStory = decodeURIComponent(story);
-
     async function generatePresentation() {
       try {
         // Step 1: Split story into scenes
@@ -39,7 +37,7 @@ function PresentationContent() {
         const scenesRes = await fetch(`${API_URL}/api/scenes`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ story: decodedStory }),
+          body: JSON.stringify({ story }),
         });
 
         if (!scenesRes.ok) {
