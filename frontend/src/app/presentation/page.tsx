@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useSyncExternalStore } from "react";
 
@@ -158,12 +159,14 @@ function PresentationContent() {
       {/* Scene Card */}
       <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden shadow-lg">
         {/* Image */}
-        <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+        <div className="relative aspect-video bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
           {scene.image_url ? (
-            <img
+            <Image
               src={scene.image_url}
               alt={`Scene ${scene.scene_number}`}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              unoptimized
             />
           ) : (
             <div className="flex flex-col items-center gap-2 text-zinc-400">
