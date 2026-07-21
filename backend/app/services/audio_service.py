@@ -3,6 +3,7 @@ import base64
 import logging
 import asyncio
 from elevenlabs.client import AsyncElevenLabs
+from elevenlabs.core.api_error import ApiError
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +12,12 @@ logger = logging.getLogger(__name__)
 DEFAULT_VOICE_ID = "EXAVITQu4vr4xnSDxMaL"
 DEFAULT_MODEL_ID = "eleven_multilingual_v2"
 OUTPUT_FORMAT = "mp3_44100_128"
+
+# ElevenLabs' free tier caps concurrent requests; bursts return 429
+# concurrent_limit_exceeded. Retry a few times with a short backoff so a
+# transient concurrency spike doesn't fail the whole narration.
+MAX_ATTEMPTS = 4
+RETRY_BACKOFF_SECONDS = 1.5
 
 
 def get_client():
@@ -41,20 +48,32 @@ async def generate_narration(text: str, timeout_seconds: int = 60) -> str:
                 chunks.append(chunk)
         return b"".join(chunks)
 
-    try:
-        audio_bytes = await asyncio.wait_for(_collect(), timeout=timeout_seconds)
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            audio_bytes = await asyncio.wait_for(_collect(), timeout=timeout_seconds)
 
-        if not audio_bytes:
-            logger.error("No audio data in response")
-            raise ValueError("No audio data returned")
+            if not audio_bytes:
+                logger.error("No audio data in response")
+                raise ValueError("No audio data returned")
 
-        logger.info(f"Narration audio received. Size: {len(audio_bytes)} bytes")
-        b64 = base64.b64encode(audio_bytes).decode("ascii")
-        return f"data:audio/mpeg;base64,{b64}"
+            logger.info(f"Narration audio received. Size: {len(audio_bytes)} bytes")
+            b64 = base64.b64encode(audio_bytes).decode("ascii")
+            return f"data:audio/mpeg;base64,{b64}"
 
-    except asyncio.TimeoutError:
-        logger.error(f"Narration generation timed out after {timeout_seconds} seconds")
-        raise TimeoutError(f"Narration generation timed out after {timeout_seconds} seconds")
-    except Exception as e:
-        logger.error(f"Narration generation failed: {type(e).__name__}: {str(e)}")
-        raise
+        except asyncio.TimeoutError:
+            logger.error(f"Narration generation timed out after {timeout_seconds} seconds")
+            raise TimeoutError(f"Narration generation timed out after {timeout_seconds} seconds")
+        except ApiError as e:
+            if e.status_code == 429 and attempt < MAX_ATTEMPTS:
+                backoff = RETRY_BACKOFF_SECONDS * attempt
+                logger.warning(
+                    f"ElevenLabs 429 concurrent_limit_exceeded "
+                    f"(attempt {attempt}/{MAX_ATTEMPTS}); retrying in {backoff}s"
+                )
+                await asyncio.sleep(backoff)
+                continue
+            logger.error(f"Narration generation failed: ApiError status={e.status_code}: {e.body}")
+            raise
+        except Exception as e:
+            logger.error(f"Narration generation failed: {type(e).__name__}: {str(e)}")
+            raise

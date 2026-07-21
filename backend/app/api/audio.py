@@ -1,5 +1,6 @@
 import logging
 from fastapi import APIRouter, HTTPException
+from elevenlabs.core.api_error import ApiError
 from app.models.audio import AudioRequest, AudioResponse
 from app.services.audio_service import generate_narration
 
@@ -23,6 +24,12 @@ async def create_audio(request: AudioRequest):
     except TimeoutError as e:
         logger.error(f"Narration generation timeout: {e}")
         raise HTTPException(status_code=504, detail=str(e))
+    except ApiError as e:
+        if e.status_code == 429:
+            logger.warning("Narration rate-limited by ElevenLabs (429), returning 429")
+            raise HTTPException(status_code=429, detail="Narration service busy, please retry")
+        logger.error(f"Narration generation error: ApiError status={e.status_code}: {e.body}")
+        raise HTTPException(status_code=500, detail="Failed to generate narration")
     except Exception as e:
         logger.error(f"Narration generation error: {type(e).__name__}: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate narration")
