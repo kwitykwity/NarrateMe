@@ -1,11 +1,11 @@
 import os
 import json
-from anthropic import Anthropic
+from anthropic import AsyncAnthropic
 from app.models.scene import SceneResponse
 
 
 def get_client():
-    return Anthropic(api_key=os.getenv("API_KEY"))
+    return AsyncAnthropic(api_key=os.getenv("API_KEY"))
 
 SYSTEM_PROMPT = """You are a children's story editor specializing in creating illustrated storybooks for kids in grades 1-3.
 
@@ -34,7 +34,7 @@ Guidelines:
 
 async def split_story_into_scenes(story: str) -> SceneResponse:
     client = get_client()
-    message = client.messages.create(
+    message = await client.messages.create(
         model="claude-sonnet-5",
         max_tokens=2048,
         system=SYSTEM_PROMPT,
