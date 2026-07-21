@@ -5,25 +5,293 @@
       "scene_number": 1,
       "text": "One sunny morning, a small brown puppy named Max wandered away from his home. He sniffed flowers and chased butterflies until he was lost.",
       "image_url": "/demo/scene-1.png",
-      "audio_url": "/demo/scene-1.mp3"
+      "audio_url": "/demo/scene-1.mp3",
+      "word_timings": [
+        {
+          "word": "One",
+          "start": 0.0,
+          "end": 0.464
+        },
+        {
+          "word": "sunny",
+          "start": 0.511,
+          "end": 0.766
+        },
+        {
+          "word": "morning,",
+          "start": 0.824,
+          "end": 1.277
+        },
+        {
+          "word": "a",
+          "start": 1.324,
+          "end": 1.393
+        },
+        {
+          "word": "small",
+          "start": 1.474,
+          "end": 1.753
+        },
+        {
+          "word": "brown",
+          "start": 1.8,
+          "end": 2.055
+        },
+        {
+          "word": "puppy",
+          "start": 2.125,
+          "end": 2.426
+        },
+        {
+          "word": "named",
+          "start": 2.508,
+          "end": 2.74
+        },
+        {
+          "word": "Max",
+          "start": 2.81,
+          "end": 3.204
+        },
+        {
+          "word": "wandered",
+          "start": 3.297,
+          "end": 3.692
+        },
+        {
+          "word": "away",
+          "start": 3.727,
+          "end": 3.913
+        },
+        {
+          "word": "from",
+          "start": 3.959,
+          "end": 4.087
+        },
+        {
+          "word": "his",
+          "start": 4.133,
+          "end": 4.214
+        },
+        {
+          "word": "home.",
+          "start": 4.272,
+          "end": 4.69
+        },
+        {
+          "word": "He",
+          "start": 5.016,
+          "end": 5.132
+        },
+        {
+          "word": "sniffed",
+          "start": 5.19,
+          "end": 5.492
+        },
+        {
+          "word": "flowers",
+          "start": 5.538,
+          "end": 6.014
+        },
+        {
+          "word": "and",
+          "start": 6.06,
+          "end": 6.153
+        },
+        {
+          "word": "chased",
+          "start": 6.211,
+          "end": 6.525
+        },
+        {
+          "word": "butterflies",
+          "start": 6.571,
+          "end": 7.187
+        },
+        {
+          "word": "until",
+          "start": 7.245,
+          "end": 7.454
+        },
+        {
+          "word": "he",
+          "start": 7.512,
+          "end": 7.558
+        },
+        {
+          "word": "was",
+          "start": 7.593,
+          "end": 7.686
+        },
+        {
+          "word": "lost.",
+          "start": 7.744,
+          "end": 8.406
+        }
+      ]
     },
     {
       "scene_number": 2,
       "text": "A kind girl named Lily found Max and saw his collar.",
       "image_url": "/demo/scene-2.png",
-      "audio_url": "/demo/scene-2.mp3"
+      "audio_url": "/demo/scene-2.mp3",
+      "word_timings": [
+        {
+          "word": "A",
+          "start": 0.0,
+          "end": 0.07
+        },
+        {
+          "word": "kind",
+          "start": 0.139,
+          "end": 0.36
+        },
+        {
+          "word": "girl",
+          "start": 0.418,
+          "end": 0.615
+        },
+        {
+          "word": "named",
+          "start": 0.673,
+          "end": 0.882
+        },
+        {
+          "word": "Lily",
+          "start": 0.952,
+          "end": 1.242
+        },
+        {
+          "word": "found",
+          "start": 1.324,
+          "end": 1.567
+        },
+        {
+          "word": "Max",
+          "start": 1.637,
+          "end": 1.962
+        },
+        {
+          "word": "and",
+          "start": 2.02,
+          "end": 2.113
+        },
+        {
+          "word": "saw",
+          "start": 2.159,
+          "end": 2.322
+        },
+        {
+          "word": "his",
+          "start": 2.38,
+          "end": 2.485
+        },
+        {
+          "word": "collar.",
+          "start": 2.543,
+          "end": 3.158
+        }
+      ]
     },
     {
       "scene_number": 3,
       "text": "She walked him all the way back home.",
       "image_url": "/demo/scene-3.png",
-      "audio_url": "/demo/scene-3.mp3"
+      "audio_url": "/demo/scene-3.mp3",
+      "word_timings": [
+        {
+          "word": "She",
+          "start": 0.0,
+          "end": 0.29
+        },
+        {
+          "word": "walked",
+          "start": 0.348,
+          "end": 0.615
+        },
+        {
+          "word": "him",
+          "start": 0.65,
+          "end": 0.755
+        },
+        {
+          "word": "all",
+          "start": 0.824,
+          "end": 1.022
+        },
+        {
+          "word": "the",
+          "start": 1.068,
+          "end": 1.138
+        },
+        {
+          "word": "way",
+          "start": 1.184,
+          "end": 1.277
+        },
+        {
+          "word": "back",
+          "start": 1.324,
+          "end": 1.509
+        },
+        {
+          "word": "home.",
+          "start": 1.567,
+          "end": 2.136
+        }
+      ]
     },
     {
       "scene_number": 4,
       "text": "Max was so happy to see his family again!",
       "image_url": "/demo/scene-4.png",
-      "audio_url": "/demo/scene-4.mp3"
+      "audio_url": "/demo/scene-4.mp3",
+      "word_timings": [
+        {
+          "word": "Max",
+          "start": 0.0,
+          "end": 0.279
+        },
+        {
+          "word": "was",
+          "start": 0.337,
+          "end": 0.453
+        },
+        {
+          "word": "so",
+          "start": 0.499,
+          "end": 0.639
+        },
+        {
+          "word": "happy",
+          "start": 0.731,
+          "end": 1.01
+        },
+        {
+          "word": "to",
+          "start": 1.045,
+          "end": 1.091
+        },
+        {
+          "word": "see",
+          "start": 1.138,
+          "end": 1.265
+        },
+        {
+          "word": "his",
+          "start": 1.312,
+          "end": 1.416
+        },
+        {
+          "word": "family",
+          "start": 1.474,
+          "end": 1.858
+        },
+        {
+          "word": "again!",
+          "start": 1.916,
+          "end": 2.461
+        }
+      ]
     }
   ]
 }

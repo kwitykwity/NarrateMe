@@ -18,9 +18,9 @@ async def create_audio(request: AudioRequest):
         raise HTTPException(status_code=400, detail="Text must not be empty")
 
     try:
-        audio_url = await generate_narration(request.text)
+        audio_url, word_timings = await generate_narration(request.text)
         logger.info("Narration generation successful")
-        return AudioResponse(audio_url=audio_url)
+        return AudioResponse(audio_url=audio_url, word_timings=word_timings)
     except TimeoutError as e:
         logger.error(f"Narration generation timeout: {e}")
         raise HTTPException(status_code=504, detail=str(e))

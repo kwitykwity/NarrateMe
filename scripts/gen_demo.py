@@ -6,9 +6,10 @@ URLs to static PNG/MP3 files under frontend/public/demo/ and writes a manifest
 at frontend/public/demo-story.json.
 
 Resumable: the scene split is cached to scripts/demo_scenes.json, and any scene
-whose image/audio file already exists on disk is skipped, so a mid-run failure
-(e.g. a 504 on a slow image) can be recovered by re-running without redoing good
-work.
+whose image already exists on disk is skipped, so a mid-run failure (e.g. a 504
+on a slow image) can be recovered by re-running without redoing the slow images.
+Narration is always (re)fetched because it also carries the word-highlight
+timings that go into the manifest; it's the fast, reliable call.
 
 Paths are resolved relative to this file, so it can be run from anywhere as long
 as the backend is up on :8000:
@@ -108,18 +109,18 @@ async def main():
                 with open(png_path, "wb") as f:
                     f.write(png_bytes)
 
-            if os.path.exists(mp3_path):
-                print(f"Scene {n}: audio already present, skipping")
-            else:
-                print(f"Scene {n}: generating narration...")
-                aud = await post(client, "/api/audio", {"text": scene["text"]}, AUDIO_TIMEOUT)
-                mp3_bytes = data_url_to_bytes(aud["audio_url"])
-                with open(mp3_path, "wb") as f:
-                    f.write(mp3_bytes)
+            # Always fetch narration: besides the mp3 it returns the per-word
+            # timings the manifest needs for highlighting.
+            print(f"Scene {n}: generating narration...")
+            aud = await post(client, "/api/audio", {"text": scene["text"]}, AUDIO_TIMEOUT)
+            mp3_bytes = data_url_to_bytes(aud["audio_url"])
+            with open(mp3_path, "wb") as f:
+                f.write(mp3_bytes)
+            word_timings = aud.get("word_timings", [])
 
             print(
                 f"  scene {n}: {png_name} ({os.path.getsize(png_path)} B), "
-                f"{mp3_name} ({os.path.getsize(mp3_path)} B)"
+                f"{mp3_name} ({os.path.getsize(mp3_path)} B), {len(word_timings)} words"
             )
             manifest_scenes.append(
                 {
@@ -127,6 +128,7 @@ async def main():
                     "text": scene["text"],
                     "image_url": f"/demo/{png_name}",
                     "audio_url": f"/demo/{mp3_name}",
+                    "word_timings": word_timings,
                 }
             )
 

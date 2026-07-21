@@ -1,11 +1,13 @@
 import os
-import base64
 import logging
 import asyncio
 from elevenlabs.client import AsyncElevenLabs
 from elevenlabs.core.api_error import ApiError
 
 logger = logging.getLogger(__name__)
+
+# One word's playback window, derived from ElevenLabs' per-character alignment.
+WordTiming = dict[str, object]  # {"word": str, "start": float, "end": float}
 
 # "Sarah" - a soft, warm premade voice that suits children's narration and is
 # available on free-tier accounts (library voices require a paid plan).
@@ -29,36 +31,72 @@ def get_client():
     return AsyncElevenLabs(api_key=api_key)
 
 
-async def generate_narration(text: str, timeout_seconds: int = 60) -> str:
+def _aggregate_words(characters, starts, ends) -> list[WordTiming]:
+    """Collapse per-character alignment into whitespace-delimited word timings.
+
+    Each word's start is the start time of its first character and its end is the
+    end time of its last, so the words line up with the same text split on
+    whitespace in the UI.
+    """
+    words: list[WordTiming] = []
+    cur: list[str] = []
+    cur_start: float | None = None
+    cur_end: float | None = None
+    for ch, start, end in zip(characters, starts, ends):
+        if ch.isspace():
+            if cur:
+                words.append({"word": "".join(cur), "start": cur_start, "end": cur_end})
+                cur, cur_start, cur_end = [], None, None
+        else:
+            if not cur:
+                cur_start = start
+            cur.append(ch)
+            cur_end = end
+    if cur:
+        words.append({"word": "".join(cur), "start": cur_start, "end": cur_end})
+    return words
+
+
+async def generate_narration(
+    text: str, timeout_seconds: int = 60
+) -> tuple[str, list[WordTiming]]:
     logger.info(f"Starting narration generation. Text length: {len(text)} chars")
     logger.debug(f"Narration text: {text[:100]}...")
 
     client = get_client()
 
-    async def _collect() -> bytes:
-        logger.info("Calling ElevenLabs text_to_speech.convert API...")
-        chunks: list[bytes] = []
-        async for chunk in client.text_to_speech.convert(
+    async def _call():
+        logger.info("Calling ElevenLabs text_to_speech.convert_with_timestamps API...")
+        return await client.text_to_speech.convert_with_timestamps(
             DEFAULT_VOICE_ID,
             text=text,
             model_id=DEFAULT_MODEL_ID,
             output_format=OUTPUT_FORMAT,
-        ):
-            if chunk:
-                chunks.append(chunk)
-        return b"".join(chunks)
+        )
 
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
-            audio_bytes = await asyncio.wait_for(_collect(), timeout=timeout_seconds)
+            resp = await asyncio.wait_for(_call(), timeout=timeout_seconds)
 
-            if not audio_bytes:
+            if not resp.audio_base_64:
                 logger.error("No audio data in response")
                 raise ValueError("No audio data returned")
 
-            logger.info(f"Narration audio received. Size: {len(audio_bytes)} bytes")
-            b64 = base64.b64encode(audio_bytes).decode("ascii")
-            return f"data:audio/mpeg;base64,{b64}"
+            word_timings: list[WordTiming] = []
+            if resp.alignment:
+                word_timings = _aggregate_words(
+                    resp.alignment.characters,
+                    resp.alignment.character_start_times_seconds,
+                    resp.alignment.character_end_times_seconds,
+                )
+
+            logger.info(
+                f"Narration audio received. Base64 length: {len(resp.audio_base_64)}, "
+                f"words: {len(word_timings)}"
+            )
+            # audio_base_64 is already base64-encoded, so embed it directly.
+            audio_url = f"data:audio/mpeg;base64,{resp.audio_base_64}"
+            return audio_url, word_timings
 
         except asyncio.TimeoutError:
             logger.error(f"Narration generation timed out after {timeout_seconds} seconds")

@@ -2,13 +2,21 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect, useRef, useSyncExternalStore } from "react";
+import { Fragment, useState, useEffect, useRef, useSyncExternalStore } from "react";
 
 const API_URL = "http://localhost:8000";
 
 // Used with useSyncExternalStore to detect client-side hydration without
 // triggering a setState-in-effect (sessionStorage is client-only).
 const emptySubscribe = () => () => {};
+
+// One word's playback window (seconds), from ElevenLabs' character alignment,
+// used to highlight the word as the narration reaches it.
+interface WordTiming {
+  word: string;
+  start: number;
+  end: number;
+}
 
 interface Scene {
   scene_number: number;
@@ -20,6 +28,7 @@ interface Scene {
   image_error?: boolean;
   audio_url?: string;
   audio_error?: boolean;
+  word_timings?: WordTiming[];
 }
 
 // Max requests in flight at once, per resource. High concurrency inflates the
@@ -49,6 +58,7 @@ interface BackupStory {
     text: string;
     image_url: string;
     audio_url: string;
+    word_timings?: WordTiming[];
   }[];
 }
 
@@ -68,6 +78,7 @@ async function loadBackupStory(signal?: AbortSignal): Promise<ScenesData> {
       text: s.text,
       image_url: s.image_url,
       audio_url: s.audio_url,
+      word_timings: s.word_timings,
     })),
   };
 }
@@ -87,6 +98,9 @@ function PresentationContent() {
   // When true, each scene's narration plays automatically and advances to the
   // next scene when the audio ends (hands-free read-along).
   const [autoAdvance, setAutoAdvance] = useState(false);
+  // Index of the word currently being narrated in the active scene (-1 = none),
+  // driven by the audio element's timeupdate events.
+  const [currentWordIndex, setCurrentWordIndex] = useState(-1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -134,7 +148,7 @@ function PresentationContent() {
           maxAttempts: number,
           label: string,
           sceneNumber: number,
-          onSuccess: (json: Record<string, string>) => void,
+          onSuccess: (json: Record<string, unknown>) => void,
           onFinalError: () => void
         ) {
           for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -200,7 +214,7 @@ function PresentationContent() {
               IMAGE_MAX_ATTEMPTS,
               "Image generation",
               scene.scene_number,
-              (json) => patchScene(i, { image_url: json.image_url, image_error: false }),
+              (json) => patchScene(i, { image_url: json.image_url as string, image_error: false }),
               () => patchScene(i, { image_error: true })
             )
           ),
@@ -211,7 +225,12 @@ function PresentationContent() {
               AUDIO_MAX_ATTEMPTS,
               "Narration generation",
               scene.scene_number,
-              (json) => patchScene(i, { audio_url: json.audio_url, audio_error: false }),
+              (json) =>
+                patchScene(i, {
+                  audio_url: json.audio_url as string,
+                  word_timings: json.word_timings as WordTiming[],
+                  audio_error: false,
+                }),
               () => patchScene(i, { audio_error: true })
             )
           ),
@@ -261,6 +280,13 @@ function PresentationContent() {
     }
   }, [autoAdvance, currentScene, currentAudioUrl]);
 
+  // Move to another scene, clearing the word highlight; the new scene's audio
+  // element remounts at time 0 and its timeupdate events drive it again.
+  const goToScene = (updater: (c: number) => number) => {
+    setCurrentScene(updater);
+    setCurrentWordIndex(-1);
+  };
+
   // Manual escape hatch: load the backup story on demand (e.g. from the error
   // screen if the automatic fallback's own fetch failed and was retried).
   const showBackup = async () => {
@@ -270,6 +296,7 @@ function PresentationContent() {
       setScenesData(backup);
       setIsBackup(true);
       setCurrentScene(0);
+      setCurrentWordIndex(-1);
       setStatus("done");
     } catch {
       setError("Couldn't load the backup story");
@@ -335,15 +362,34 @@ function PresentationContent() {
     }
   };
 
-  // When a scene's narration finishes during read-along, advance to the next
-  // scene (its audio auto-plays via the effect), or stop on the last scene.
+  // When a scene's narration finishes, clear the highlight; during read-along
+  // also advance to the next scene (its audio auto-plays via the effect), or
+  // stop on the last scene.
   const handleAudioEnded = () => {
+    setCurrentWordIndex(-1);
     if (!autoAdvance) return;
     if (currentScene < totalScenes - 1) {
       setCurrentScene((c) => c + 1);
     } else {
       setAutoAdvance(false);
     }
+  };
+
+  // Follow narration playback: highlight the latest word whose start time has
+  // been reached, so the highlight holds through short inter-word gaps until the
+  // next word begins. Driven by the audio element's timeupdate events, so it
+  // works for both read-along and manual play.
+  const handleTimeUpdate = () => {
+    const el = audioRef.current;
+    const timings = scene.word_timings;
+    if (!el || !timings || timings.length === 0) return;
+    const t = el.currentTime;
+    let idx = -1;
+    for (let i = 0; i < timings.length; i++) {
+      if (timings[i].start <= t) idx = i;
+      else break;
+    }
+    setCurrentWordIndex(idx);
   };
 
   return (
@@ -407,7 +453,22 @@ function PresentationContent() {
         {/* Text */}
         <div className="p-6">
           <p className="text-lg text-zinc-800 dark:text-zinc-200 leading-relaxed">
-            {scene.text}
+            {scene.word_timings && scene.word_timings.length > 0
+              ? scene.word_timings.map((w, i) => (
+                  <Fragment key={i}>
+                    <span
+                      className={
+                        i === currentWordIndex
+                          ? "rounded bg-amber-200 dark:bg-amber-400/30 transition-colors"
+                          : "transition-colors"
+                      }
+                    >
+                      {w.word}
+                    </span>
+                    {i < scene.word_timings!.length - 1 ? " " : ""}
+                  </Fragment>
+                ))
+              : scene.text}
           </p>
 
           {/* Narration */}
@@ -417,7 +478,9 @@ function PresentationContent() {
                 key={scene.scene_number}
                 ref={audioRef}
                 controls
+                preload="auto"
                 src={scene.audio_url}
+                onTimeUpdate={handleTimeUpdate}
                 onEnded={handleAudioEnded}
                 className="w-full"
               >
@@ -474,7 +537,7 @@ function PresentationContent() {
       {/* Navigation */}
       <div className="mt-6 flex items-center justify-between">
         <button
-          onClick={() => setCurrentScene((c) => c - 1)}
+          onClick={() => goToScene((c) => c - 1)}
           disabled={currentScene === 0}
           className="px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
@@ -486,7 +549,7 @@ function PresentationContent() {
         </span>
 
         <button
-          onClick={() => setCurrentScene((c) => c + 1)}
+          onClick={() => goToScene((c) => c + 1)}
           disabled={currentScene === totalScenes - 1}
           className="px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
