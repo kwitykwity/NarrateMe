@@ -1,10 +1,13 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Suspense, useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 
 const API_URL = "http://localhost:8000";
+
+// Used with useSyncExternalStore to detect client-side hydration without
+// triggering a setState-in-effect (sessionStorage is client-only).
+const emptySubscribe = () => () => {};
 
 interface Scene {
   scene_number: number;
@@ -19,8 +22,9 @@ interface ScenesData {
 }
 
 function PresentationContent() {
-  const searchParams = useSearchParams();
-  const story = searchParams.get("story");
+  // false during SSR and the first hydration render, true once on the client.
+  const hydrated = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const story = hydrated ? sessionStorage.getItem("narrateme:story") : null;
 
   const [status, setStatus] = useState<"loading" | "generating" | "done" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +109,7 @@ function PresentationContent() {
     };
   }, [story]);
 
-  if (!story) {
+  if (hydrated && !story) {
     return (
       <div className="text-center">
         <p className="text-zinc-600 dark:text-zinc-400 mb-4">No story provided</p>
@@ -223,16 +227,7 @@ export default function PresentationPage() {
         <p className="text-zinc-600 dark:text-zinc-400">Your illustrated story</p>
       </div>
 
-      <Suspense
-        fallback={
-          <div className="flex items-center gap-3">
-            <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-            <p className="text-zinc-600 dark:text-zinc-400">Loading...</p>
-          </div>
-        }
-      >
-        <PresentationContent />
-      </Suspense>
+      <PresentationContent />
     </div>
   );
 }

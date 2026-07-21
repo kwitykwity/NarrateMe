@@ -21,8 +21,8 @@ export default function Home() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (story.trim().length < 50) return;
-    const encoded = encodeURIComponent(story);
-    router.push(`/presentation?story=${encoded}`);
+    sessionStorage.setItem("narrateme:story", story);
+    router.push("/presentation");
   };
 
   const loadSample = (text: string) => {
