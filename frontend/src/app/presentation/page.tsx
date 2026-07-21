@@ -43,6 +43,13 @@ const AUDIO_CONCURRENCY = 2;
 const IMAGE_MAX_ATTEMPTS = 2;
 const AUDIO_MAX_ATTEMPTS = 2;
 
+// Per-attempt client-side ceiling (ms). A request that hasn't resolved by then
+// is aborted and counted as a failed attempt (then retried). Set above the
+// backend's own timeouts so its structured 504/429 responses are preferred,
+// leaving this as a backstop for a truly hung request. Images are the slow one.
+const IMAGE_TIMEOUT_MS = 130_000;
+const AUDIO_TIMEOUT_MS = 65_000;
+
 interface ScenesData {
   character_description: string;
   scenes: Scene[];
@@ -146,6 +153,7 @@ function PresentationContent() {
           endpoint: string,
           body: object,
           maxAttempts: number,
+          timeoutMs: number,
           label: string,
           sceneNumber: number,
           onSuccess: (json: Record<string, unknown>) => void,
@@ -158,7 +166,14 @@ function PresentationContent() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
-                signal: controller.signal,
+                // Abort if the caller cancels (unmount) or the per-attempt
+                // timeout elapses. A timeout throws a TimeoutError (not
+                // AbortError), so it falls through to the retry path below
+                // instead of the silent-cancellation guard.
+                signal: AbortSignal.any([
+                  controller.signal,
+                  AbortSignal.timeout(timeoutMs),
+                ]),
               });
               if (cancelled) return;
               if (!res.ok) {
@@ -212,6 +227,7 @@ function PresentationContent() {
               "/api/images",
               { prompt: scene.image_prompt },
               IMAGE_MAX_ATTEMPTS,
+              IMAGE_TIMEOUT_MS,
               "Image generation",
               scene.scene_number,
               (json) => patchScene(i, { image_url: json.image_url as string, image_error: false }),
@@ -223,6 +239,7 @@ function PresentationContent() {
               "/api/audio",
               { text: scene.text },
               AUDIO_MAX_ATTEMPTS,
+              AUDIO_TIMEOUT_MS,
               "Narration generation",
               scene.scene_number,
               (json) =>
