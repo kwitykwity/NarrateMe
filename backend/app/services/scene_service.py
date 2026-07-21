@@ -1,11 +1,20 @@
 import os
 import json
+import logging
+import asyncio
 from anthropic import AsyncAnthropic
 from app.models.scene import SceneResponse
 
+logger = logging.getLogger(__name__)
+
 
 def get_client():
-    return AsyncAnthropic(api_key=os.getenv("API_KEY"))
+    api_key = os.getenv("API_KEY")
+    if not api_key:
+        logger.error("API_KEY environment variable not set")
+        raise ValueError("API_KEY environment variable not set")
+    logger.debug("Anthropic client initialized")
+    return AsyncAnthropic(api_key=api_key)
 
 SYSTEM_PROMPT = """You are a children's story editor specializing in creating illustrated storybooks for kids in grades 1-3.
 
@@ -32,32 +41,55 @@ Guidelines:
 - Use a warm, friendly illustration style (e.g., "children's book illustration style, warm colors, friendly")"""
 
 
-async def split_story_into_scenes(story: str) -> SceneResponse:
+async def split_story_into_scenes(story: str, timeout_seconds: int = 60) -> SceneResponse:
+    logger.info(f"Starting scene splitting. Story length: {len(story)} chars")
+
     client = get_client()
-    message = await client.messages.create(
-        model="claude-sonnet-5",
-        max_tokens=2048,
-        system=SYSTEM_PROMPT,
-        messages=[
-            {
-                "role": "user",
-                "content": f"Please split this story into scenes:\n\n{story}",
-            }
-        ],
-    )
 
-    response_text = message.content[0].text
-
-    # Parse JSON from response
     try:
-        data = json.loads(response_text)
-    except json.JSONDecodeError:
-        # Try to extract JSON from the response if it contains extra text
-        start = response_text.find("{")
-        end = response_text.rfind("}") + 1
-        if start != -1 and end > start:
-            data = json.loads(response_text[start:end])
-        else:
-            raise ValueError("Failed to parse scene response from Claude")
+        logger.info("Calling Anthropic messages.create API...")
+        message = await asyncio.wait_for(
+            client.messages.create(
+                model="claude-sonnet-5",
+                max_tokens=2048,
+                system=SYSTEM_PROMPT,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Please split this story into scenes:\n\n{story}",
+                    }
+                ],
+            ),
+            timeout=timeout_seconds
+        )
+        logger.info("Anthropic API response received")
 
-    return SceneResponse(**data)
+        response_text = message.content[0].text
+        logger.debug(f"Response text length: {len(response_text)} chars")
+
+        # Parse JSON from response
+        try:
+            data = json.loads(response_text)
+            logger.info("JSON parsed successfully")
+        except json.JSONDecodeError as e:
+            logger.warning(f"Initial JSON parse failed: {e}. Attempting extraction...")
+            # Try to extract JSON from the response if it contains extra text
+            start = response_text.find("{")
+            end = response_text.rfind("}") + 1
+            if start != -1 and end > start:
+                data = json.loads(response_text[start:end])
+                logger.info("JSON extracted and parsed successfully")
+            else:
+                logger.error(f"Failed to extract JSON from response: {response_text[:200]}...")
+                raise ValueError("Failed to parse scene response from Claude")
+
+        scene_count = len(data.get("scenes", []))
+        logger.info(f"Scene splitting complete. Generated {scene_count} scenes")
+        return SceneResponse(**data)
+
+    except asyncio.TimeoutError:
+        logger.error(f"Scene splitting timed out after {timeout_seconds} seconds")
+        raise TimeoutError(f"Scene splitting timed out after {timeout_seconds} seconds")
+    except Exception as e:
+        logger.error(f"Scene splitting failed: {type(e).__name__}: {str(e)}")
+        raise
