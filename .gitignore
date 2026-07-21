@@ -40,3 +40,6 @@ npm-debug.log*
 .coverage
 htmlcov/
 .pytest_cache/
+
+# Project docs
+BUG_REPORT.md
