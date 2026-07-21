@@ -35,7 +35,7 @@ interface Scene {
 // image API's per-request latency (and can trip the backend timeout), so we cap
 // it. Narration is capped at 2 to match the ElevenLabs free-tier concurrent
 // request limit (3+ in parallel returns 429 concurrent_limit_exceeded).
-const IMAGE_CONCURRENCY = 3;
+const IMAGE_CONCURRENCY = 2;
 const AUDIO_CONCURRENCY = 2;
 
 // Total attempts per scene resource before giving up. Failures are usually
