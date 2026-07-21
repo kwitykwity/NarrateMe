@@ -8,6 +8,7 @@ load_dotenv(dotenv_path=env_path)
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.scenes import router as scenes_router
+from app.api.images import router as images_router
 
 app = FastAPI(
     title="NarrateMe API",
@@ -24,6 +25,7 @@ app.add_middleware(
 )
 
 app.include_router(scenes_router)
+app.include_router(images_router)
 
 
 @app.get("/health")
