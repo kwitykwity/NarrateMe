@@ -1,9 +1,14 @@
-import os
+import logging
 from pathlib import Path
 from dotenv import load_dotenv
 
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
