@@ -1,0 +1,99 @@
+NarrateMe
+Product Requirements Document: Net New Build
+Build name: NarrateMe   |   Owner: Christina   |   Date: July 2026
+1. Problem
+Children in grades 1–3 struggle to stay engaged with static reading materials, and the teachers and parents who create content for them have no fast way to turn a plain written story into something more engaging, because doing so today means manually writing, illustrating, and narrating a story by hand or piecing together separate, disconnected AI tools. As a result, most stories stay flat text on a page, and kids who need more sensory engagement to stay focused and build comprehension don't get it.
+Supporting Context
+Static, text-only reading materials are a well-documented engagement barrier for early readers (grades 1–3), a stage where comprehension is closely tied to multisensory input.
+No existing consumer tool takes a plain story and automatically produces an illustrated, narrated, multi-scene presentation in one step — the closest tools (AI image generators, TTS tools, avatar platforms) each solve one piece and require manual stitching between them.
+Teachers and parents are increasingly expected to differentiate and personalize reading materials, but lack the design, illustration, or audio-production skills to do so themselves.
+1a. Opportunity
+Give any teacher or parent the ability to turn a story into an illustrated, narrated presentation in under a minute — no writing, illustration, or audio skills required — making personalized, multimedia reading material as easy to produce as pasting text into a box.
+Market Opportunity
+Early-literacy edtech and personalized children's media are active, growing categories, with demand from both classrooms and individual parents for tools that make reading more engaging without requiring production skills.
+Adjacent markets (personalized children's books, AI narration/audiobook tools) are already proven, paying categories — NarrateMe combines their value into a single automated pipeline rather than a static, one-time product.
+1b. Users & Needs
+Primary user(s):
+Teachers and parents of children in grades 1–3, who have a written story (their own, a student's, or an existing text) and want to make it more engaging without design or production skills.
+Secondary users:
+Children ages 6–9, who watch/listen to the resulting presentation as the end consumer of the content.
+Key User Needs
+As a teacher, I need to turn a plain story into an illustrated, narrated presentation because my students lose focus reading static text on a page.
+As a parent, I need a fast way to make a story feel special and engaging because I don't have the time or skill to illustrate or narrate it myself.
+As a teacher, I need the pipeline to work reliably without manual fixing because I don't have time to troubleshoot AI tools between classes.
+2. Proposed Solution
+NarrateMe is a web app that turns a written story into a narrated, illustrated, multi-scene presentation automatically. Users simply paste or type their story into a text box, and the system splits it into 3–5 scenes, generates a matching illustration for each scene, and narrates it with a warm, natural-sounding voice. As a result, teachers and parents can produce an engaging, presentation-ready story in under a minute, with no writing, illustration, or audio-editing skills required.
+2a. Value Proposition
+Teachers and parents who struggle with turning static, plain-text stories into something engaging for grades 1–3 readers use NarrateMe, a web app, to automatically generate an illustrated, narrated, multi-scene presentation from any written story. Unlike manually illustrating a story or stitching together separate AI image, voice, and design tools, NarrateMe delivers a complete, presentation-ready result in one step, helping educators and parents boost engagement without any design or production skill.
+2b. Top 3 MVP Value Props
+The Vitamin (must-have baseline):
+A written story reliably becomes a clear, coherent, multi-scene illustrated presentation — the baseline table stakes without which the product has no reason to exist.
+The Painkiller (solves the core pain):
+No more manually illustrating, formatting, or recording a story, and no more juggling separate AI tools by hand — one paste-in, one output.
+The Steroid (the magic moment):
+The story comes alive with a consistent character, warm narration, and synced illustrations in under 60 seconds — turning a plain paragraph into something that feels like a real storybook was made just for that story.
+2c. Goals & Non-Goals
+Goals
+Prove the core AI pipeline (text → scenes → illustrations → narration → player) works end-to-end without manual intervention.
+Deliver a demo-ready experience that looks polished enough to show a teacher or parent, not just a technical proof of concept.
+Keep the same illustrated character recognizable across all scenes in a given story.
+Complete generation in under 60 seconds so the experience feels immediate, not like a batch job.
+Non-Goals
+Lip-sync or gesture animation on the avatar — deferred to a future version.
+Comprehension quizzes, vocabulary activities, teacher dashboards, analytics, or a saved story library — deferred, not part of this build.
+Speech-to-text/audio story input and multi-language support — deferred, text input only for this version.
+2d. Success Metrics
+Goal
+Signal
+Metric
+Target
+Pipeline reliability
+Presentation generates without manual fixes
+% of test runs completing unassisted
+>2 of 2 test stories complete with zero manual intervention
+Speed
+User gets a result quickly enough to feel instant
+Time from paste to playable presentation
+Under 60 seconds
+Character consistency
+Illustrated character looks recognizably the same scene to scene
+Manual visual check across all scenes per story
+Consistent across 100% of scenes in each demo story
+Narration/text sync
+Read-along experience feels coherent
+Word highlighting stays aligned with narration audio
+Roughly in sync throughout playback
+Demo resilience
+Demo doesn't fail live
+Backup pre-generated story available
+At least 1–2 backup stories ready before demo
+3. Requirements
+User Journey 1: Teacher or parent turning a story into a presentation
+Context: This is the core journey for the MVP — the entire demo depends on this flow working reliably, quickly, and without manual intervention.
+Sub-journey: Inputting a story
+[P0] User can paste or type a story into a text input, with no login required.
+[P0] User can submit the story to begin generation with a single action.
+[P2] User can upload a story as a simple text file instead of pasting.
+Sub-journey: Generating the presentation
+[P0] System can split the submitted story into 3–5 scenes (beginning/middle/end structure).
+[P0] System can generate one illustration per scene, keeping the same character description across all scenes.
+[P0] System can generate narration audio per scene, using a warm, slower-paced voice.
+[P0] System can complete generation without manual intervention on varied input stories.
+[P1] System can complete the full generation process in under 60 seconds.
+[P2] System can detect and flag a likely character-consistency mismatch between scenes.
+Sub-journey: Viewing the presentation
+[P0] User can play the presentation scene by scene, with illustration, narration, and text displayed together.
+[P0] User can advance between scenes, automatically or via a play/next control.
+[P1] User can see the story text highlighted in sync with the narration audio.
+[P1] User can see a static or simple 2-pose avatar synced to audio playback.
+[P2] User can restart or replay a scene.
+User Journey 2: Presenter demoing NarrateMe live
+Context: Since this is a 2-week MVP intended primarily for a live demo, the demo experience itself is a first-class journey, not an afterthought.
+Sub-journey: Preparing for a live demo
+[P0] Presenter can access at least one pre-generated backup story in case live generation fails during the demo.
+[P1] Presenter can trigger generation live, in front of an audience, with visible progress/loading state.
+[P2] Presenter can choose between multiple pre-generated backup stories.
+4. Appendix
+Known accepted risk: character consistency across DALL-E-generated scene illustrations may drift; mitigation is a strong, persistent character-description prompt reused across every scene's image generation call, not a technical/model-level fix. Flagged as future work rather than solved in this 2-week build.
+Future scope (post-MVP, not this build): avatar lip-sync/gesture animation, comprehension quizzes, teacher dashboard, saved story library, voice cloning, multi-language support, background music/sound design, analytics.
+Team: 4 members across Backend/AI Engineer, AI/Visual Engineer, Audio Engineer, and Frontend/UX Lead roles, working in parallel over a 14-day sprint.

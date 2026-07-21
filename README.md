@@ -10,6 +10,24 @@ NarrateMe helps teachers and parents of kids in grades 1–3 turn any plain writ
 
 **MVP Sprint v1 — 2-week build.** This is a proof-of-concept build meant to demo the core pipeline end-to-end. It is not a production product. See [Non-Goals](#non-goals-v1) below for what's intentionally out of scope right now.
 
+### Implementation Status
+
+**Working today:**
+- Story input UI — paste/type, sample stories, 50-character minimum
+- Scene splitting via Claude → structured JSON with a persistent character description reused across scenes
+- Per-scene illustration via an OpenAI image model, using the shared character prompt for consistency
+- Presentation player — scene cards (illustration + text), Previous/Next navigation, live image-generation progress
+- Backend hardening — request timeouts (60s scenes / 120s images), structured logging, API-key validation, `504` on timeout
+
+**Not yet built (still in v1 scope):**
+- Text-to-speech narration per scene (ElevenLabs)
+- Word highlighting synced to narration audio
+- Static / 2-pose avatar synced to audio playback
+- Auto-advance playback
+- Pre-generated backup story for demo resilience
+
+**Known gap:** images are generated sequentially at ~30–40s each, so a 4–5 scene story currently takes longer than the 60-second target. Parallelizing image generation is the planned mitigation.
+
 ---
 
 ## Team
@@ -28,8 +46,8 @@ NarrateMe helps teachers and parents of kids in grades 1–3 turn any plain writ
 1. **Input** — User pastes or types a story into a text box. No login required.
 2. **Scene splitting** — An LLM (Claude/GPT) splits the story into 3–5 scenes (beginning/middle/end structure) and outputs structured JSON, including a persistent character description reused across every scene.
 3. **Illustration** — DALL-E 3 generates one illustration per scene, using the shared character description to keep the character visually consistent.
-4. **Narration** — ElevenLabs (or Amazon Polly) generates narration audio per scene, using a warm, slower-paced voice suited to early readers.
-5. **Playback** — A simple presentation player shows each scene's illustration with the text highlighted in sync with narration, auto-advancing (or user-advanced) scene by scene, alongside a static or 2-pose avatar synced to the audio.
+4. **Narration** *(planned)* — ElevenLabs (or Amazon Polly) generates narration audio per scene, using a warm, slower-paced voice suited to early readers.
+5. **Playback** — A simple presentation player shows each scene's illustration alongside its text, advanced scene by scene with Previous/Next controls. Narration-synced word highlighting, auto-advance, and a static/2-pose avatar are *planned*.
 
 ---
 
@@ -37,14 +55,52 @@ NarrateMe helps teachers and parents of kids in grades 1–3 turn any plain writ
 
 | Layer | Tool |
 |---|---|
-| Frontend | React or Next.js, Tailwind CSS |
-| Backend / Orchestration | Node.js (Express) or Python (FastAPI) — or Next.js API routes |
-| Scene generation | Claude or GPT (structured JSON output) |
-| Image generation | DALL-E 3 |
-| Text-to-Speech | ElevenLabs or Amazon Polly |
-| Avatar | Static image / 2-pose swap (no animation engine) |
+| Frontend | Next.js 16 (App Router), React 19, Tailwind CSS 4 |
+| Backend / Orchestration | Python (FastAPI), Uvicorn, async clients |
+| Scene generation | Anthropic Claude (structured JSON output) |
+| Image generation | OpenAI image model (returns base64 PNG) |
+| Text-to-Speech | ElevenLabs *(planned — not yet integrated)* |
+| Avatar | Static image / 2-pose swap *(planned — not yet integrated)* |
 | Hosting | Vercel |
 | Storage | None required for MVP — stateless, one-shot generation |
+
+---
+
+## Getting Started
+
+### Backend (FastAPI)
+
+```bash
+cd backend
+python -m venv venv
+venv\Scripts\activate        # Windows  (use: source venv/bin/activate on macOS/Linux)
+pip install -r requirements.txt
+```
+
+Create `backend/.env`:
+
+```
+API_KEY=your_anthropic_api_key
+OPENAI_API_KEY=your_openai_api_key
+```
+
+Run the API (serves on `http://localhost:8000`):
+
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+
+**Endpoints:** `GET /health`, `POST /api/scenes` (split story → scenes), `POST /api/images` (prompt → illustration).
+
+### Frontend (Next.js)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000`. The frontend expects the backend at `http://localhost:8000`.
 
 ---
 
