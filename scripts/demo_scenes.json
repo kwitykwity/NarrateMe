@@ -1,0 +1,25 @@
+{
+  "character_description": "Max is a small brown puppy with floppy ears, big round dark eyes, a short fluffy tail, and a red collar with a little silver tag. He has a playful, curious expression. Lily is a kind young girl with shoulder-length curly brown hair, wearing a yellow sundress and white sneakers, with a warm, friendly smile.",
+  "scenes": [
+    {
+      "scene_number": 1,
+      "text": "One sunny morning, a small brown puppy named Max wandered away from his home. He sniffed flowers and chased butterflies until he was lost.",
+      "image_prompt": "Children's book illustration style, warm colors, friendly. A small brown puppy named Max, with floppy ears, big round dark eyes, a short fluffy tail, and a red collar with a silver tag, happily sniffing colorful flowers and chasing bright butterflies in a sunny green meadow. The scene feels cheerful but shows Max wandering far from home, surrounded by tall grass and blooming flowers under a bright blue sky."
+    },
+    {
+      "scene_number": 2,
+      "text": "A kind girl named Lily found Max and saw his collar.",
+      "image_prompt": "Children's book illustration style, warm colors, friendly. Lily, a kind young girl with shoulder-length curly brown hair, wearing a yellow sundress and white sneakers, kneeling down in a park to gently pet Max, a small brown puppy with floppy ears and a red collar with a silver tag. She is smiling warmly and looking closely at his collar, with trees and soft sunlight in the background."
+    },
+    {
+      "scene_number": 3,
+      "text": "She walked him all the way back home.",
+      "image_prompt": "Children's book illustration style, warm colors, friendly. Lily, the kind girl with curly brown hair and a yellow sundress, walking happily along a sunny sidewalk holding a leash attached to Max, the small brown puppy with floppy ears and a red collar. They are passing cheerful houses with flower gardens, both looking happy and content under a bright sky."
+    },
+    {
+      "scene_number": 4,
+      "text": "Max was so happy to see his family again!",
+      "image_prompt": "Children's book illustration style, warm colors, friendly. Max, the small brown puppy with floppy ears and a red collar, joyfully reuniting with his family in front of a cozy house, tail wagging and jumping with excitement. Lily, the kind girl in a yellow sundress, stands nearby smiling as the family happily welcomes Max home, with warm sunlight and a heartwarming atmosphere."
+    }
+  ]
+}

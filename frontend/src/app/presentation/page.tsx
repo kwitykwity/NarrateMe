@@ -13,7 +13,9 @@ const emptySubscribe = () => () => {};
 interface Scene {
   scene_number: number;
   text: string;
-  image_prompt: string;
+  // Present for live-generated scenes (from /api/scenes); absent for the
+  // pre-baked backup story, whose images are already rendered.
+  image_prompt?: string;
   image_url?: string;
   image_error?: boolean;
   audio_url?: string;
@@ -37,6 +39,39 @@ interface ScenesData {
   scenes: Scene[];
 }
 
+// Shape of the pre-baked backup manifest at /public/demo-story.json. Its scenes
+// already carry rendered image/audio URLs (static /demo/* paths), so no live
+// generation is needed once it's loaded.
+interface BackupStory {
+  title: string;
+  scenes: {
+    scene_number: number;
+    text: string;
+    image_url: string;
+    audio_url: string;
+  }[];
+}
+
+// Load the pre-generated backup story and adapt it to the ScenesData shape the
+// player already renders. Used as a fallback when live generation can't produce
+// anything (e.g. the scene-split call fails during a demo).
+async function loadBackupStory(signal?: AbortSignal): Promise<ScenesData> {
+  const res = await fetch("/demo-story.json", signal ? { signal } : undefined);
+  if (!res.ok) {
+    throw new Error("Failed to load backup story");
+  }
+  const data: BackupStory = await res.json();
+  return {
+    character_description: "",
+    scenes: data.scenes.map((s) => ({
+      scene_number: s.scene_number,
+      text: s.text,
+      image_url: s.image_url,
+      audio_url: s.audio_url,
+    })),
+  };
+}
+
 function PresentationContent() {
   // false during SSR and the first hydration render, true once on the client.
   const hydrated = useSyncExternalStore(emptySubscribe, () => true, () => false);
@@ -45,6 +80,9 @@ function PresentationContent() {
   const [status, setStatus] = useState<"loading" | "generating" | "done" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
   const [scenesData, setScenesData] = useState<ScenesData | null>(null);
+  // True once we've fallen back to the pre-baked backup story instead of live
+  // generation, so the UI can flag it.
+  const [isBackup, setIsBackup] = useState(false);
   const [currentScene, setCurrentScene] = useState(0);
   // When true, each scene's narration plays automatically and advances to the
   // next scene when the audio ends (hands-free read-along).
@@ -183,8 +221,22 @@ function PresentationContent() {
         setStatus("done");
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Something went wrong");
-        setStatus("error");
+        // Intentional cancellation (StrictMode remount / unmount): stay silent.
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        // Live generation failed before we could show anything (e.g. the
+        // scene-split call errored). Fall back to the pre-baked backup story so
+        // a demo still has a complete presentation to play.
+        try {
+          const backup = await loadBackupStory(controller.signal);
+          if (cancelled) return;
+          setScenesData(backup);
+          setIsBackup(true);
+          setStatus("done");
+        } catch {
+          if (cancelled) return;
+          setError(err instanceof Error ? err.message : "Something went wrong");
+          setStatus("error");
+        }
       }
     }
 
@@ -209,6 +261,22 @@ function PresentationContent() {
     }
   }, [autoAdvance, currentScene, currentAudioUrl]);
 
+  // Manual escape hatch: load the backup story on demand (e.g. from the error
+  // screen if the automatic fallback's own fetch failed and was retried).
+  const showBackup = async () => {
+    setStatus("loading");
+    try {
+      const backup = await loadBackupStory();
+      setScenesData(backup);
+      setIsBackup(true);
+      setCurrentScene(0);
+      setStatus("done");
+    } catch {
+      setError("Couldn't load the backup story");
+      setStatus("error");
+    }
+  };
+
   if (hydrated && !story) {
     return (
       <div className="text-center">
@@ -224,9 +292,17 @@ function PresentationContent() {
     return (
       <div className="text-center">
         <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
-        <Link href="/" className="text-blue-600 hover:underline dark:text-blue-400">
-          Try again
-        </Link>
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={showBackup}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+          >
+            Show the backup story
+          </button>
+          <Link href="/" className="text-blue-600 hover:underline dark:text-blue-400">
+            Try again
+          </Link>
+        </div>
       </div>
     );
   }
@@ -272,6 +348,12 @@ function PresentationContent() {
 
   return (
     <div className="w-full max-w-4xl">
+      {isBackup && (
+        <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-400">
+          Live generation was unavailable — showing a pre-loaded backup story.
+        </div>
+      )}
+
       {status === "generating" && (
         <div className="mb-6 flex items-center justify-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
           <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
