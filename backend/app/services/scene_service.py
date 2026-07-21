@@ -64,7 +64,16 @@ async def split_story_into_scenes(story: str, timeout_seconds: int = 60) -> Scen
         )
         logger.info("Anthropic API response received")
 
-        response_text = message.content[0].text
+        # The response may lead with non-text blocks (e.g. a ThinkingBlock when
+        # extended thinking is on), so pick the first text block rather than
+        # assuming content[0].
+        response_text = next(
+            (block.text for block in message.content if block.type == "text"),
+            None,
+        )
+        if response_text is None:
+            logger.error("No text block in Anthropic response")
+            raise ValueError("No text content in scene response from Claude")
         logger.debug(f"Response text length: {len(response_text)} chars")
 
         # Parse JSON from response
