@@ -16,17 +16,18 @@ NarrateMe helps teachers and parents of kids in grades 1–3 turn any plain writ
 - Story input UI — paste/type, sample stories, 50-character minimum
 - Scene splitting via Claude → structured JSON with a persistent character description reused across scenes
 - Per-scene illustration via an OpenAI image model, using the shared character prompt for consistency
-- Presentation player — scene cards (illustration + text), Previous/Next navigation, live image-generation progress
-- Backend hardening — request timeouts (60s scenes / 120s images), structured logging, API-key validation, `504` on timeout
+- Per-scene narration via ElevenLabs, returned as an inline audio player on each scene card
+- Concurrent generation — images and narration each run through a bounded worker pool (max 3 in flight) with a per-scene retry and a visible error state on final failure
+- Presentation player — scene cards (illustration + text + narration audio), Previous/Next navigation, live image and narration progress
+- Backend hardening — request timeouts (60s scenes / 120s images / 60s narration), structured logging, API-key validation, `504` on timeout
 
 **Not yet built (still in v1 scope):**
-- Text-to-speech narration per scene (ElevenLabs)
 - Word highlighting synced to narration audio
 - Static / 2-pose avatar synced to audio playback
 - Auto-advance playback
 - Pre-generated backup story for demo resilience
 
-**Known gap:** images are generated sequentially at ~30–40s each, so a 4–5 scene story currently takes longer than the 60-second target. Parallelizing image generation is the planned mitigation.
+**Known gap:** OpenAI's per-image latency is highly variable (~40s nominal, but can climb past the 120s backend timeout under throttling). Generation is now concurrent (capped at 3), so total time scales with the slowest image rather than the sum; a slow outlier returns `504`, after which the frontend retries once and, if that also fails, shows a per-scene error card.
 
 ---
 
@@ -46,8 +47,8 @@ NarrateMe helps teachers and parents of kids in grades 1–3 turn any plain writ
 1. **Input** — User pastes or types a story into a text box. No login required.
 2. **Scene splitting** — An LLM (Claude/GPT) splits the story into 3–5 scenes (beginning/middle/end structure) and outputs structured JSON, including a persistent character description reused across every scene.
 3. **Illustration** — DALL-E 3 generates one illustration per scene, using the shared character description to keep the character visually consistent.
-4. **Narration** *(planned)* — ElevenLabs (or Amazon Polly) generates narration audio per scene, using a warm, slower-paced voice suited to early readers.
-5. **Playback** — A simple presentation player shows each scene's illustration alongside its text, advanced scene by scene with Previous/Next controls. Narration-synced word highlighting, auto-advance, and a static/2-pose avatar are *planned*.
+4. **Narration** — ElevenLabs generates narration audio per scene using a warm voice ("Sarah") suited to early readers, returned as a base64 MP3 and played inline on each scene card.
+5. **Playback** — A simple presentation player shows each scene's illustration alongside its text and a narration audio player, advanced scene by scene with Previous/Next controls. Narration-synced word highlighting, auto-advance, and a static/2-pose avatar are *planned*.
 
 ---
 
@@ -59,7 +60,7 @@ NarrateMe helps teachers and parents of kids in grades 1–3 turn any plain writ
 | Backend / Orchestration | Python (FastAPI), Uvicorn, async clients |
 | Scene generation | Anthropic Claude (structured JSON output) |
 | Image generation | OpenAI image model (returns base64 PNG) |
-| Text-to-Speech | ElevenLabs *(planned — not yet integrated)* |
+| Text-to-Speech | ElevenLabs (`AsyncElevenLabs`, returns base64 MP3) |
 | Avatar | Static image / 2-pose swap *(planned — not yet integrated)* |
 | Hosting | Vercel |
 | Storage | None required for MVP — stateless, one-shot generation |
@@ -82,6 +83,7 @@ Create `backend/.env`:
 ```
 API_KEY=your_anthropic_api_key
 OPENAI_API_KEY=your_openai_api_key
+ELEVENLABS_API_KEY=your_elevenlabs_api_key
 ```
 
 Run the API (serves on `http://localhost:8000`):
@@ -90,7 +92,7 @@ Run the API (serves on `http://localhost:8000`):
 uvicorn app.main:app --reload --port 8000
 ```
 
-**Endpoints:** `GET /health`, `POST /api/scenes` (split story → scenes), `POST /api/images` (prompt → illustration).
+**Endpoints:** `GET /health`, `POST /api/scenes` (split story → scenes), `POST /api/images` (prompt → illustration), `POST /api/audio` (text → narration MP3).
 
 ### Frontend (Next.js)
 
