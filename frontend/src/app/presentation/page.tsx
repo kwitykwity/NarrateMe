@@ -15,7 +15,16 @@ interface Scene {
   text: string;
   image_prompt: string;
   image_url?: string;
+  image_error?: boolean;
 }
+
+// Max image requests in flight at once. High concurrency inflates the image
+// API's per-request latency (and can trip the backend timeout), so we cap it.
+const IMAGE_CONCURRENCY = 3;
+
+// Total attempts per scene image before giving up. Failures are usually
+// transient (upstream timeouts under load), so a retry often recovers them.
+const IMAGE_MAX_ATTEMPTS = 2;
 
 interface ScenesData {
   character_description: string;
@@ -58,47 +67,73 @@ function PresentationContent() {
         setScenesData(data);
         setStatus("generating");
 
-        // Step 2: Generate images for all scenes in parallel. Each request
-        // updates its own scene as it resolves, so cards fill in independently
-        // rather than waiting for the slowest image.
-        await Promise.allSettled(
-          data.scenes.map(async (scene, i) => {
-            try {
-              const imageRes = await fetch(`${API_URL}/api/images`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt: scene.image_prompt }),
-                signal: controller.signal,
-              });
+        // Functional updates so concurrent per-scene writes don't clobber
+        // each other.
+        const markImage = (i: number, image_url: string) =>
+          setScenesData((prev) => {
+            if (!prev) return prev;
+            const scenes = [...prev.scenes];
+            scenes[i] = { ...scenes[i], image_url, image_error: false };
+            return { ...prev, scenes };
+          });
+        const markError = (i: number) =>
+          setScenesData((prev) => {
+            if (!prev) return prev;
+            const scenes = [...prev.scenes];
+            scenes[i] = { ...scenes[i], image_error: true };
+            return { ...prev, scenes };
+          });
 
-              if (!imageRes.ok) {
-                console.error(
-                  `Image generation failed for scene ${scene.scene_number}: ${imageRes.status} ${imageRes.statusText}`
-                );
-                return;
-              }
+        // Step 2: Generate images with a bounded worker pool. Workers pull the
+        // next scene index off a shared cursor, keeping at most
+        // IMAGE_CONCURRENCY requests in flight. Cards fill in as each resolves.
+        let nextIndex = 0;
 
-              const imageData = await imageRes.json();
+        async function worker() {
+          while (!cancelled) {
+            const i = nextIndex++;
+            if (i >= data.scenes.length) return;
+            const scene = data.scenes[i];
+
+            // Retry a failed image before giving up. While retrying the scene
+            // keeps showing its loading spinner; only the final failure flags
+            // the error state.
+            for (let attempt = 1; attempt <= IMAGE_MAX_ATTEMPTS; attempt++) {
               if (cancelled) return;
-              // Functional update so concurrent per-scene writes don't clobber
-              // each other.
-              setScenesData((prev) => {
-                if (!prev) return prev;
-                const scenes = [...prev.scenes];
-                scenes[i] = { ...scenes[i], image_url: imageData.image_url };
-                return { ...prev, scenes };
-              });
-            } catch (err) {
-              if (cancelled) return;
-              // Ignore intentional cancellations; log real failures and continue.
-              if (!(err instanceof DOMException && err.name === "AbortError")) {
+              try {
+                const imageRes = await fetch(`${API_URL}/api/images`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ prompt: scene.image_prompt }),
+                  signal: controller.signal,
+                });
+                if (cancelled) return;
+                if (!imageRes.ok) {
+                  throw new Error(`${imageRes.status} ${imageRes.statusText}`);
+                }
+                const imageData = await imageRes.json();
+                if (cancelled) return;
+                markImage(i, imageData.image_url);
+                break;
+              } catch (err) {
+                if (cancelled) return;
+                // Intentional cancellation: stop silently.
+                if (err instanceof DOMException && err.name === "AbortError") return;
+                const lastAttempt = attempt === IMAGE_MAX_ATTEMPTS;
                 console.error(
-                  `Image generation errored for scene ${scene.scene_number}:`,
+                  `Image generation for scene ${scene.scene_number} failed on ` +
+                    `attempt ${attempt}/${IMAGE_MAX_ATTEMPTS}` +
+                    `${lastAttempt ? " (giving up)" : ", retrying"}:`,
                   err
                 );
+                if (lastAttempt) markError(i);
               }
             }
-          })
+          }
+        }
+
+        await Promise.all(
+          Array.from({ length: Math.min(IMAGE_CONCURRENCY, data.scenes.length) }, worker)
         );
 
         if (cancelled) return;
@@ -176,6 +211,26 @@ function PresentationContent() {
               className="object-cover"
               unoptimized
             />
+          ) : scene.image_error ? (
+            <div className="flex flex-col items-center gap-2 px-6 text-center text-amber-600 dark:text-amber-500">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="h-8 w-8"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 9v3.75m0 3.75h.008M10.34 3.94l-8.14 14.1A1.5 1.5 0 003.5 20.25h17a1.5 1.5 0 001.3-2.21l-8.14-14.1a1.5 1.5 0 00-2.6 0z"
+                />
+              </svg>
+              <span className="text-sm">
+                Image couldn&apos;t be generated for this scene.
+              </span>
+            </div>
           ) : (
             <div className="flex flex-col items-center gap-2 text-zinc-400">
               <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full"></div>
