@@ -10,6 +10,23 @@ const API_URL = "http://localhost:8000";
 // triggering a setState-in-effect (sessionStorage is client-only).
 const emptySubscribe = () => () => {};
 
+// Resolve after `ms`, or early if `signal` aborts, so a pending retry backoff
+// doesn't outlive an unmount.
+function delay(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    if (signal.aborted) return resolve();
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      { once: true }
+    );
+  });
+}
+
 // One word's playback window (seconds), from ElevenLabs' character alignment,
 // used to highlight the word as the narration reaches it.
 interface WordTiming {
@@ -49,6 +66,12 @@ const AUDIO_MAX_ATTEMPTS = 2;
 // leaving this as a backstop for a truly hung request. Images are the slow one.
 const IMAGE_TIMEOUT_MS = 130_000;
 const AUDIO_TIMEOUT_MS = 65_000;
+
+// Base delay before retrying a failed request, scaled by attempt number. Images
+// fail mainly under upstream load, so pausing lets it subside before retrying;
+// narration is fast and reliable, so it retries immediately (0).
+const IMAGE_RETRY_BACKOFF_MS = 3_000;
+const AUDIO_RETRY_BACKOFF_MS = 0;
 
 interface ScenesData {
   character_description: string;
@@ -154,6 +177,7 @@ function PresentationContent() {
           body: object,
           maxAttempts: number,
           timeoutMs: number,
+          retryBackoffMs: number,
           label: string,
           sceneNumber: number,
           onSuccess: (json: Record<string, unknown>) => void,
@@ -194,7 +218,14 @@ function PresentationContent() {
                   `${lastAttempt ? " (giving up)" : ", retrying"}:`,
                 err
               );
-              if (lastAttempt) onFinalError();
+              if (lastAttempt) {
+                onFinalError();
+              } else if (retryBackoffMs > 0) {
+                // Scale the pause with the attempt number, then re-check
+                // cancellation since the wait can span an unmount.
+                await delay(retryBackoffMs * attempt, controller.signal);
+                if (cancelled) return;
+              }
             }
           }
         }
@@ -228,6 +259,7 @@ function PresentationContent() {
               { prompt: scene.image_prompt },
               IMAGE_MAX_ATTEMPTS,
               IMAGE_TIMEOUT_MS,
+              IMAGE_RETRY_BACKOFF_MS,
               "Image generation",
               scene.scene_number,
               (json) => patchScene(i, { image_url: json.image_url as string, image_error: false }),
@@ -240,6 +272,7 @@ function PresentationContent() {
               { text: scene.text },
               AUDIO_MAX_ATTEMPTS,
               AUDIO_TIMEOUT_MS,
+              AUDIO_RETRY_BACKOFF_MS,
               "Narration generation",
               scene.scene_number,
               (json) =>
