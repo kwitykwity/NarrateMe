@@ -58,42 +58,50 @@ function PresentationContent() {
         setScenesData(data);
         setStatus("generating");
 
-        // Step 2: Generate images for each scene
-        const updatedScenes = [...data.scenes];
+        // Step 2: Generate images for all scenes in parallel. Each request
+        // updates its own scene as it resolves, so cards fill in independently
+        // rather than waiting for the slowest image.
+        await Promise.allSettled(
+          data.scenes.map(async (scene, i) => {
+            try {
+              const imageRes = await fetch(`${API_URL}/api/images`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt: scene.image_prompt }),
+                signal: controller.signal,
+              });
 
-        for (let i = 0; i < updatedScenes.length; i++) {
-          if (cancelled) return;
-          const scene = updatedScenes[i];
-          try {
-            const imageRes = await fetch(`${API_URL}/api/images`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ prompt: scene.image_prompt }),
-              signal: controller.signal,
-            });
+              if (!imageRes.ok) {
+                console.error(
+                  `Image generation failed for scene ${scene.scene_number}: ${imageRes.status} ${imageRes.statusText}`
+                );
+                return;
+              }
 
-            if (imageRes.ok) {
               const imageData = await imageRes.json();
               if (cancelled) return;
-              updatedScenes[i] = { ...scene, image_url: imageData.image_url };
-              setScenesData({ ...data, scenes: [...updatedScenes] });
-            } else {
-              console.error(
-                `Image generation failed for scene ${scene.scene_number}: ${imageRes.status} ${imageRes.statusText}`
-              );
+              // Functional update so concurrent per-scene writes don't clobber
+              // each other.
+              setScenesData((prev) => {
+                if (!prev) return prev;
+                const scenes = [...prev.scenes];
+                scenes[i] = { ...scenes[i], image_url: imageData.image_url };
+                return { ...prev, scenes };
+              });
+            } catch (err) {
+              if (cancelled) return;
+              // Ignore intentional cancellations; log real failures and continue.
+              if (!(err instanceof DOMException && err.name === "AbortError")) {
+                console.error(
+                  `Image generation errored for scene ${scene.scene_number}:`,
+                  err
+                );
+              }
             }
-          } catch (err) {
-            if (cancelled) return;
-            // Ignore intentional cancellations; log real failures and continue.
-            if (!(err instanceof DOMException && err.name === "AbortError")) {
-              console.error(
-                `Image generation errored for scene ${scene.scene_number}:`,
-                err
-              );
-            }
-          }
-        }
+          })
+        );
 
+        if (cancelled) return;
         setStatus("done");
       } catch (err) {
         if (cancelled) return;
