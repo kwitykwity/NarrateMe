@@ -72,10 +72,20 @@ function PresentationContent() {
               if (cancelled) return;
               updatedScenes[i] = { ...scene, image_url: imageData.image_url };
               setScenesData({ ...data, scenes: [...updatedScenes] });
+            } else {
+              console.error(
+                `Image generation failed for scene ${scene.scene_number}: ${imageRes.status} ${imageRes.statusText}`
+              );
             }
-          } catch {
+          } catch (err) {
             if (cancelled) return;
-            // Continue with other images if one fails
+            // Ignore intentional cancellations; log real failures and continue.
+            if (!(err instanceof DOMException && err.name === "AbortError")) {
+              console.error(
+                `Image generation errored for scene ${scene.scene_number}:`,
+                err
+              );
+            }
           }
         }
 
