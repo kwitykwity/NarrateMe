@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect, useSyncExternalStore } from "react";
+import { useState, useEffect, useRef, useSyncExternalStore } from "react";
 
 const API_URL = "http://localhost:8000";
 
@@ -45,6 +45,10 @@ function PresentationContent() {
   const [error, setError] = useState<string | null>(null);
   const [scenesData, setScenesData] = useState<ScenesData | null>(null);
   const [currentScene, setCurrentScene] = useState(0);
+  // When true, each scene's narration plays automatically and advances to the
+  // next scene when the audio ends (hands-free read-along).
+  const [autoAdvance, setAutoAdvance] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (!story) return;
@@ -191,6 +195,19 @@ function PresentationContent() {
     };
   }, [story]);
 
+  // Drive the read-along: when auto-advance is on and the current scene's
+  // narration is ready, play it. Changing scene (or a newly-arrived audio URL)
+  // re-triggers this so the next clip starts automatically.
+  const currentAudioUrl = scenesData?.scenes[currentScene]?.audio_url;
+  useEffect(() => {
+    if (!autoAdvance) return;
+    const el = audioRef.current;
+    if (el && currentAudioUrl) {
+      // Autoplay can be rejected without a prior user gesture; ignore it.
+      el.play().catch(() => {});
+    }
+  }, [autoAdvance, currentScene, currentAudioUrl]);
+
   if (hydrated && !story) {
     return (
       <div className="text-center">
@@ -228,6 +245,29 @@ function PresentationContent() {
   const totalScenes = scenesData.scenes.length;
   const imagesLoaded = scenesData.scenes.filter((s) => s.image_url).length;
   const audioLoaded = scenesData.scenes.filter((s) => s.audio_url).length;
+
+  // Read-along toggle. Starting/stopping is a user gesture, which satisfies
+  // the browser autoplay policy for the subsequent auto-advanced clips.
+  const toggleReadAlong = () => {
+    if (autoAdvance) {
+      setAutoAdvance(false);
+      audioRef.current?.pause();
+    } else {
+      setAutoAdvance(true);
+      audioRef.current?.play().catch(() => {});
+    }
+  };
+
+  // When a scene's narration finishes during read-along, advance to the next
+  // scene (its audio auto-plays via the effect), or stop on the last scene.
+  const handleAudioEnded = () => {
+    if (!autoAdvance) return;
+    if (currentScene < totalScenes - 1) {
+      setCurrentScene((c) => c + 1);
+    } else {
+      setAutoAdvance(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-4xl">
@@ -292,8 +332,10 @@ function PresentationContent() {
             {scene.audio_url ? (
               <audio
                 key={scene.scene_number}
+                ref={audioRef}
                 controls
                 src={scene.audio_url}
+                onEnded={handleAudioEnded}
                 className="w-full"
               >
                 Your browser does not support audio playback.
@@ -324,6 +366,26 @@ function PresentationContent() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Read-along control */}
+      <div className="mt-6 flex justify-center">
+        <button
+          onClick={toggleReadAlong}
+          disabled={audioLoaded === 0}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          {autoAdvance ? (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+              <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+          <span>{autoAdvance ? "Pause" : "Play story"}</span>
+        </button>
       </div>
 
       {/* Navigation */}
