@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Fragment, useState, useEffect, useRef, useSyncExternalStore } from "react";
 import OwlAvatar from "./OwlAvatar";
 
-const API_URL = "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 // Used with useSyncExternalStore to detect client-side hydration without
 // triggering a setState-in-effect (sessionStorage is client-only).
