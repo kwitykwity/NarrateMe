@@ -511,8 +511,8 @@ function PresentationContent() {
         </div>
 
         {/* Text */}
-        <div className="p-6">
-          <p className="text-lg text-zinc-800 dark:text-zinc-200 leading-relaxed">
+        <div className="px-6 pb-6 pt-14">
+          <p className="text-base text-zinc-800 dark:text-zinc-200 leading-relaxed">
             {scene.word_timings && scene.word_timings.length > 0
               ? scene.word_timings.map((w, i) => (
                   <Fragment key={i}>
