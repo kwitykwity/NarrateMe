@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment, useState, useEffect, useRef, useSyncExternalStore } from "react";
+import { PageDoodles } from "../components/PageDoodles";
+import { T } from "../lib/design";
 
 const API_URL = "http://localhost:8000";
 
@@ -357,8 +359,14 @@ function PresentationContent() {
   if (hydrated && !story) {
     return (
       <div className="text-center">
-        <p className="text-zinc-600 dark:text-zinc-400 mb-4">No story provided</p>
-        <Link href="/" className="text-blue-600 hover:underline dark:text-blue-400">
+        <p className="mb-4 font-medium" style={{ color: T.muted }}>
+          No story provided
+        </p>
+        <Link
+          href="/"
+          className="font-semibold underline-offset-2 hover:underline"
+          style={{ color: T.roseDark }}
+        >
           Go back and enter a story
         </Link>
       </div>
@@ -368,15 +376,25 @@ function PresentationContent() {
   if (status === "error") {
     return (
       <div className="text-center">
-        <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+        <p className="mb-4 font-medium" style={{ color: T.roseDark }}>
+          {error}
+        </p>
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={showBackup}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+            className="rounded-full px-5 py-2.5 font-bold text-white transition-transform hover:scale-[1.03]"
+            style={{
+              background: T.rose,
+              boxShadow: `0 4px 0 ${T.roseDark}`,
+            }}
           >
             Show the backup story
           </button>
-          <Link href="/" className="text-blue-600 hover:underline dark:text-blue-400">
+          <Link
+            href="/"
+            className="font-semibold underline-offset-2 hover:underline"
+            style={{ color: T.muted }}
+          >
             Try again
           </Link>
         </div>
@@ -386,10 +404,23 @@ function PresentationContent() {
 
   if (status === "loading" || !scenesData) {
     return (
-      <div className="w-full max-w-3xl">
-        <div className="flex items-center justify-center gap-3 p-12 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-          <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-          <p className="text-zinc-600 dark:text-zinc-400">Splitting story into scenes...</p>
+      <div className="w-full max-w-xl">
+        <div
+          className="flex items-center justify-center gap-3 p-12"
+          style={{
+            background: T.white,
+            borderRadius: "1.5rem",
+            border: `2px solid ${T.rose}30`,
+            boxShadow: `0 6px 0 ${T.roseDark}22`,
+          }}
+        >
+          <div
+            className="h-5 w-5 animate-spin rounded-full border-2 border-t-transparent"
+            style={{ borderColor: T.rose, borderTopColor: "transparent" }}
+          />
+          <p className="font-semibold" style={{ color: T.muted }}>
+            Reading your story…
+          </p>
         </div>
       </div>
     );
@@ -622,15 +653,29 @@ function PresentationContent() {
 
 export default function PresentationPage() {
   return (
-    <div className="flex flex-col flex-1 items-center bg-zinc-50 dark:bg-black px-4 py-12">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">
+    <div
+      className="relative flex min-h-full flex-col items-center px-4 py-12"
+      style={{ background: T.bg, fontFamily: "var(--font-nunito), sans-serif" }}
+    >
+      <PageDoodles />
+      <div className="relative z-10 mb-8 text-center">
+        <h1
+          className="mb-2 text-3xl font-bold"
+          style={{
+            fontFamily: "var(--font-baloo), cursive",
+            color: T.ink,
+          }}
+        >
           NarrateMe
         </h1>
-        <p className="text-zinc-600 dark:text-zinc-400">Your illustrated story</p>
+        <p className="font-medium" style={{ color: T.muted }}>
+          Your illustrated story
+        </p>
       </div>
 
-      <PresentationContent />
+      <div className="relative z-10 w-full flex justify-center">
+        <PresentationContent />
+      </div>
     </div>
   );
 }
