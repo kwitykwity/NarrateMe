@@ -4,6 +4,7 @@
     {
       "scene_number": 1,
       "text": "One sunny morning, a small brown puppy named Max wandered away from his home. He sniffed flowers and chased butterflies until he was lost.",
+      "emotion": "scared",
       "image_url": "/demo/scene-1.png",
       "audio_url": "/demo/scene-1.mp3",
       "word_timings": [
@@ -132,6 +133,7 @@
     {
       "scene_number": 2,
       "text": "A kind girl named Lily found Max and saw his collar.",
+      "emotion": "calm",
       "image_url": "/demo/scene-2.png",
       "audio_url": "/demo/scene-2.mp3",
       "word_timings": [
@@ -195,6 +197,7 @@
     {
       "scene_number": 3,
       "text": "She walked him all the way back home.",
+      "emotion": "calm",
       "image_url": "/demo/scene-3.png",
       "audio_url": "/demo/scene-3.mp3",
       "word_timings": [
@@ -243,6 +246,7 @@
     {
       "scene_number": 4,
       "text": "Max was so happy to see his family again!",
+      "emotion": "excited",
       "image_url": "/demo/scene-4.png",
       "audio_url": "/demo/scene-4.mp3",
       "word_timings": [

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment, useState, useEffect, useRef, useSyncExternalStore } from "react";
+import OwlAvatar from "./OwlAvatar";
 
 const API_URL = "http://localhost:8000";
 
@@ -46,6 +47,9 @@ interface Scene {
   audio_url?: string;
   audio_error?: boolean;
   word_timings?: WordTiming[];
+  // Dominant tone tagged for this scene (happy/sad/excited/scared/calm), used to
+  // pick the owl narrator's expression. Falls back to a default owl if absent.
+  emotion?: string;
 }
 
 // Max requests in flight at once, per resource. High concurrency inflates the
@@ -89,6 +93,7 @@ interface BackupStory {
     image_url: string;
     audio_url: string;
     word_timings?: WordTiming[];
+    emotion?: string;
   }[];
 }
 
@@ -109,6 +114,7 @@ async function loadBackupStory(signal?: AbortSignal): Promise<ScenesData> {
       image_url: s.image_url,
       audio_url: s.audio_url,
       word_timings: s.word_timings,
+      emotion: s.emotion,
     })),
   };
 }
@@ -498,6 +504,10 @@ function PresentationContent() {
               <span className="text-sm">Generating image...</span>
             </div>
           )}
+
+          {/* Owl narrator: self-contained, fetches + draws itself from the
+              scene's emotion. Mounted here so it sits at the image's bottom edge. */}
+          <OwlAvatar emotion={scene.emotion} />
         </div>
 
         {/* Text */}
