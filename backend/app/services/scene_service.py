@@ -27,7 +27,8 @@ You must respond with valid JSON in this exact format:
     {
       "scene_number": 1,
       "text": "The exact text from the story for this scene.",
-      "image_prompt": "A detailed, child-friendly image prompt for DALL-E 3 to illustrate this scene. Include the character description details for consistency."
+      "image_prompt": "A detailed, child-friendly image prompt for DALL-E 3 to illustrate this scene. Include the character description details for consistency.",
+      "emotion": "happy"
     }
   ]
 }
@@ -38,7 +39,8 @@ Guidelines:
 - Character description should be detailed enough for visual consistency across scenes
 - Image prompts should be child-friendly, colorful, and suitable for a storybook
 - Image prompts should always reference the character's consistent appearance
-- Use a warm, friendly illustration style (e.g., "children's book illustration style, warm colors, friendly")"""
+- Use a warm, friendly illustration style (e.g., "children's book illustration style, warm colors, friendly")
+- Tag each scene with an "emotion" that captures its dominant emotional tone. You MUST pick exactly one of: "happy", "sad", "excited", "scared", "calm". This drives a narrator owl's facial expression, so choose the tone a child would feel during that scene."""
 
 
 async def split_story_into_scenes(story: str, timeout_seconds: int = 60) -> SceneResponse:
