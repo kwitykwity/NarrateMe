@@ -17,7 +17,7 @@ import asyncio
 import logging
 
 from app.models.scene import DEFAULT_EMOTION, VALID_EMOTIONS
-from app.services.image_service import get_client
+from app.services.image_service import IMAGE_QUALITY, IMAGE_SIZE, get_client
 
 logger = logging.getLogger(__name__)
 
@@ -83,8 +83,8 @@ async def generate_owl(emotion: str, timeout_seconds: int = 120) -> str:
             client.images.generate(
                 model="gpt-image-2",
                 prompt=prompt,
-                size="1024x1024",
-                quality="auto",
+                size=IMAGE_SIZE,
+                quality=IMAGE_QUALITY,
                 n=1,
             ),
             timeout=timeout_seconds,
