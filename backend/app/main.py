@@ -1,3 +1,4 @@
+import os
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
@@ -23,9 +24,17 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# Allowed frontend origins, comma-separated in CORS_ORIGINS (e.g. the Vercel URL in
+# prod). Falls back to the local dev frontend so local setups need no config.
+cors_origins = [
+    o.strip()
+    for o in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+    if o.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
