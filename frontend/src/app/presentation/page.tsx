@@ -134,6 +134,11 @@ function PresentationContent() {
   // When true, each scene's narration plays automatically and advances to the
   // next scene when the audio ends (hands-free read-along).
   const [autoAdvance, setAutoAdvance] = useState(false);
+  // True once the reader clicks "Start read-along". That click is the user
+  // gesture browsers require before narration audio may autoplay, so until it
+  // happens we show a start overlay rather than let the initial play() be
+  // silently rejected (which would stall auto-advance on scene 1).
+  const [hasStarted, setHasStarted] = useState(false);
   // Index of the word currently being narrated in the active scene (-1 = none),
   // driven by the audio element's timeupdate events.
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
@@ -418,6 +423,15 @@ function PresentationContent() {
     }
   };
 
+  // Begin the hands-free read-along from the current (first) scene. This runs
+  // from a click, so the browser honors this initial play(); once playback has
+  // started, the auto-advance effect may autoplay every subsequent clip too.
+  const startReadAlong = () => {
+    setHasStarted(true);
+    setAutoAdvance(true);
+    audioRef.current?.play().catch(() => {});
+  };
+
   // When a scene's narration finishes, clear the highlight; during read-along
   // also advance to the next scene (its audio auto-plays via the effect), or
   // stop on the last scene.
@@ -467,7 +481,46 @@ function PresentationContent() {
       )}
 
       {/* Scene Card */}
-      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden shadow-lg">
+      <div className="relative bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden shadow-lg">
+        {/* Start overlay: the single user gesture that unlocks narration
+            autoplay. Shown until the reader begins; the primary button enables
+            once the first scene's narration is ready. The secondary action
+            always lets the reader proceed so a slow/failed clip can't trap them. */}
+        {!hasStarted && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-white/85 dark:bg-black/80 backdrop-blur-sm">
+            <button
+              onClick={startReadAlong}
+              disabled={!scene.audio_url}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-blue-600 text-white text-lg font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-lg"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              <span>Start read-along</span>
+            </button>
+            {scene.audio_url ? (
+              <button
+                onClick={() => setHasStarted(true)}
+                className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+              >
+                Skip and explore on my own
+              </button>
+            ) : scene.audio_error ? (
+              <button
+                onClick={() => setHasStarted(true)}
+                className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+              >
+                Narration unavailable — continue without it
+              </button>
+            ) : (
+              <span className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+                <span className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></span>
+                Preparing narration...
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Image */}
         <div className="relative aspect-video bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
           {scene.image_url ? (
@@ -574,25 +627,28 @@ function PresentationContent() {
         </div>
       </div>
 
-      {/* Read-along control */}
-      <div className="mt-6 flex justify-center">
-        <button
-          onClick={toggleReadAlong}
-          disabled={audioLoaded === 0}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          {autoAdvance ? (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-              <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          )}
-          <span>{autoAdvance ? "Pause" : "Play story"}</span>
-        </button>
-      </div>
+      {/* Read-along control: available once started; before that the start
+          overlay on the scene card is the entry point. */}
+      {hasStarted && (
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={toggleReadAlong}
+            disabled={audioLoaded === 0}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {autoAdvance ? (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
+            <span>{autoAdvance ? "Pause" : "Play story"}</span>
+          </button>
+        </div>
+      )}
 
       {/* Navigation */}
       <div className="mt-6 flex items-center justify-between">
