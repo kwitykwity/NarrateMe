@@ -204,46 +204,75 @@
         </div>
     </section>
 
-    <!-- Demo Preview Section (dark) -->
+    <!-- Demo Preview Section (Interactive Multi-Scene Player) -->
     <section class="py-24 px-6 md:px-12 lg:px-20 bg-ink-dark text-white">
         <div class="max-w-7xl mx-auto">
-            <div class="text-center mb-16">
+            <div class="text-center mb-12">
                 <h2 class="text-4xl md:text-5xl font-extrabold mb-4">See the Magic in Action</h2>
-                <p class="text-xl text-accent-teal-soft">A real story, created in seconds with NarrateMe.</p>
+                <p class="text-xl text-accent-teal-soft">Experience "The Lost Puppy" — 4 illustrated scenes narrated live with NarrateMe.</p>
             </div>
 
             <div class="relative max-w-4xl mx-auto">
-                <div class="absolute -top-12 left-1/2 -translate-x-1/2 text-accent-yellow font-bold text-lg tracking-widest">01 / 01</div>
-                <div class="bg-surface-raised rounded-jumbo overflow-hidden shadow-2xl">
-                    <img class="w-full aspect-video object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_0218fd05a6_34eaceff916cc2c3.png" alt="vivid illustrated story scene of a friendly dragon flying over a candy-colored village at sunset, ch" />
+                <div class="flex items-center justify-between text-accent-yellow font-bold text-sm tracking-widest mb-3">
+                    <span id="demo-scene-indicator">SCENE 01 / 04</span>
+                    <span class="text-xs text-gray-300 font-normal">Click play to listen or use arrows to change scenes</span>
+                </div>
+
+                <div class="bg-surface-raised rounded-jumbo overflow-hidden shadow-2xl relative">
+                    <!-- Image Display -->
+                    <div class="relative aspect-video overflow-hidden bg-black/10">
+                        <img id="demo-scene-img" class="w-full h-full object-cover transition-opacity duration-300" src="scene-1.png" alt="Scene Illustration" />
+                        <div class="absolute top-4 right-4 bg-ink-dark/80 text-white px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm" id="demo-scene-emotion">
+                            Mood: Scared
+                        </div>
+                    </div>
+
+                    <!-- Story Text & Audio Controls -->
                     <div class="p-8">
-                        <p class="text-ink-dark text-lg leading-relaxed mb-6">
-                            "Once upon a time, in a village made of sweets, lived a tiny dragon named Spark who loved to share his warmth with everyone..."
+                        <p id="demo-scene-text" class="text-ink-dark text-lg md:text-xl font-medium leading-relaxed mb-6 min-h-[4rem]">
+                            "One sunny morning, a small brown puppy named Max wandered away from his home. He sniffed flowers and chased butterflies until he was lost."
                         </p>
-                        <div class="flex items-center justify-between border-t border-border-fine pt-6">
-                            <div class="flex items-center space-x-4">
-                                <div class="w-12 h-12 rounded-full bg-accent-teal-soft flex items-center justify-center text-accent-teal">
-                                    <i class="fa-solid fa-play"></i>
+
+                        <!-- Player Controls -->
+                        <div class="flex flex-col sm:flex-row items-center justify-between border-t border-border-fine pt-6 gap-4">
+                            <div class="flex items-center space-x-4 w-full sm:w-auto flex-1">
+                                <button id="demo-play-btn" onclick="toggleDemoAudio()" class="w-14 h-14 rounded-full bg-accent-teal text-white flex items-center justify-center hover:bg-accent-coral transition-all transform hover:scale-105 shadow-md flex-shrink-0">
+                                    <i id="demo-play-icon" class="fa-solid fa-play text-xl ml-1"></i>
+                                </button>
+                                <div class="flex-1 cursor-pointer" onclick="seekDemoAudio(event)">
+                                    <div class="h-2 w-full bg-border-fine rounded-full overflow-hidden">
+                                        <div id="demo-progress-bar" class="h-full w-0 bg-accent-teal transition-all duration-100"></div>
+                                    </div>
                                 </div>
-                                <div class="h-1 flex-1 bg-border-fine rounded-full overflow-hidden">
-                                    <div class="h-full w-1/3 bg-accent-teal"></div>
-                                </div>
-                                <span class="text-xs font-mono text-gray-500">0:42</span>
+                                <span id="demo-time-display" class="text-xs font-mono text-gray-500 w-12 text-right">0:00</span>
                             </div>
-                            <div class="flex -space-x-2">
-                                <img class="w-10 h-10 rounded-full border-2 border-ink-dark" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_417e24b606_6f72fe8ecccf848d.png" alt="portrait headshot of a smiling female elementary teacher, without background" />
-                                <img class="w-10 h-10 rounded-full border-2 border-ink-dark" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_417e24b606_aa6f81cf048ccbfb.png" alt="portrait headshot of a smiling man, parent, without background" />
-                                <img class="w-10 h-10 rounded-full border-2 border-ink-dark" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_417e24b606_3f564d2c8d937cd0.png" alt="portrait headshot of a smiling young woman, educator, without background" />
+
+                            <!-- Scene Navigation Buttons -->
+                            <div class="flex items-center space-x-3">
+                                <button onclick="changeDemoScene(-1)" class="bg-surface-base border-2 border-border-fine text-ink-dark px-4 py-2 rounded-full font-bold text-sm hover:border-accent-teal transition flex items-center">
+                                    <i class="fa-solid fa-chevron-left mr-1"></i> Prev
+                                </button>
+                                <button onclick="changeDemoScene(1)" class="bg-accent-teal text-white px-5 py-2 rounded-full font-bold text-sm hover:bg-accent-coral transition flex items-center">
+                                    Next <i class="fa-solid fa-chevron-right ml-1"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-accent-yellow text-ink-dark px-6 py-2 rounded-full font-bold text-sm whitespace-nowrap opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
-                    <i class="fa-solid fa-eye mr-2"></i>Quickview
+
+                <!-- Scene Thumbnail Dots -->
+                <div class="flex justify-center space-x-3 mt-6">
+                    <button onclick="goToDemoScene(0)" class="demo-dot w-4 h-4 rounded-full bg-accent-teal transition-all scale-125" title="Scene 1"></button>
+                    <button onclick="goToDemoScene(1)" class="demo-dot w-4 h-4 rounded-full bg-white/30 transition-all hover:bg-white/60" title="Scene 2"></button>
+                    <button onclick="goToDemoScene(2)" class="demo-dot w-4 h-4 rounded-full bg-white/30 transition-all hover:bg-white/60" title="Scene 3"></button>
+                    <button onclick="goToDemoScene(3)" class="demo-dot w-4 h-4 rounded-full bg-white/30 transition-all hover:bg-white/60" title="Scene 4"></button>
                 </div>
             </div>
 
-            <div class="mt-20 text-center">
+            <!-- Hidden Audio Element -->
+            <audio id="demo-audio-player" src="scene-1.mp3" ontimeupdate="updateDemoProgress()" onended="onDemoAudioEnded()"></audio>
+
+            <div class="mt-16 text-center">
                 <p class="text-accent-teal-soft text-lg">No account needed. No credit card. Just stories.</p>
             </div>
         </div>
@@ -317,12 +346,124 @@
     </footer>
 
     <script>
-        // Simple ticker effect for the hero (replaces canvas marquee)
-        const tickerText = "NarrateMe • NarrateMe • NarrateMe • ";
-        let tickerEl = document.createElement('div');
-        tickerEl.className = 'fixed top-24 left-0 w-full pointer-events-none z-40 text-ink-dark font-mono text-xs opacity-50 overflow-hidden whitespace-nowrap';
-        tickerEl.innerHTML = `<div class="inline-block px-4">${tickerText}</div>`;
-        document.body.appendChild(tickerEl);
+        // Interactive Multi-Scene Demo Player Data & Logic
+        const demoScenes = [
+            {
+                number: 1,
+                emotion: "Scared",
+                image: "scene-1.png",
+                audio: "scene-1.mp3",
+                text: `"One sunny morning, a small brown puppy named Max wandered away from his home. He sniffed flowers and chased butterflies until he was lost."`
+            },
+            {
+                number: 2,
+                emotion: "Calm",
+                image: "scene-2.png",
+                audio: "scene-2.mp3",
+                text: `"A kind girl named Lily found Max and saw his collar."`
+            },
+            {
+                number: 3,
+                emotion: "Calm",
+                image: "scene-3.png",
+                audio: "scene-3.mp3",
+                text: `"She walked him all the way back home."`
+            },
+            {
+                number: 4,
+                emotion: "Excited",
+                image: "scene-4.png",
+                audio: "scene-4.mp3",
+                text: `"Max was so happy to see his family again!"`
+            }
+        ];
+
+        let currentDemoIndex = 0;
+
+        function loadDemoScene(index) {
+            currentDemoIndex = index;
+            const scene = demoScenes[index];
+            
+            // Pause current audio
+            const player = document.getElementById('demo-audio-player');
+            player.pause();
+            player.src = scene.audio;
+            player.load();
+            
+            // Update UI elements
+            document.getElementById('demo-scene-indicator').textContent = `SCENE 0${scene.number} / 04`;
+            document.getElementById('demo-scene-emotion').textContent = `Mood: ${scene.emotion}`;
+            document.getElementById('demo-scene-img').src = scene.image;
+            document.getElementById('demo-scene-text').textContent = scene.text;
+            
+            // Update play icon
+            const playIcon = document.getElementById('demo-play-icon');
+            playIcon.className = "fa-solid fa-play text-xl ml-1";
+
+            // Update Progress Bar
+            document.getElementById('demo-progress-bar').style.width = '0%';
+            document.getElementById('demo-time-display').textContent = '0:00';
+
+            // Update Dots
+            const dots = document.querySelectorAll('.demo-dot');
+            dots.forEach((dot, i) => {
+                if (i === index) {
+                    dot.className = "demo-dot w-4 h-4 rounded-full bg-accent-teal transition-all scale-125";
+                } else {
+                    dot.className = "demo-dot w-4 h-4 rounded-full bg-white/30 transition-all hover:bg-white/60";
+                }
+            });
+        }
+
+        function toggleDemoAudio() {
+            const player = document.getElementById('demo-audio-player');
+            const playIcon = document.getElementById('demo-play-icon');
+
+            if (player.paused) {
+                player.play();
+                playIcon.className = "fa-solid fa-pause text-xl";
+            } else {
+                player.pause();
+                playIcon.className = "fa-solid fa-play text-xl ml-1";
+            }
+        }
+
+        function changeDemoScene(direction) {
+            let nextIndex = currentDemoIndex + direction;
+            if (nextIndex < 0) nextIndex = demoScenes.length - 1;
+            if (nextIndex >= demoScenes.length) nextIndex = 0;
+            loadDemoScene(nextIndex);
+        }
+
+        function goToDemoScene(index) {
+            loadDemoScene(index);
+        }
+
+        function updateDemoProgress() {
+            const player = document.getElementById('demo-audio-player');
+            if (player.duration) {
+                const pct = (player.currentTime / player.duration) * 100;
+                document.getElementById('demo-progress-bar').style.width = pct + '%';
+                
+                const mins = Math.floor(player.currentTime / 60);
+                const secs = Math.floor(player.currentTime % 60).toString().padStart(2, '0');
+                document.getElementById('demo-time-display').textContent = `${mins}:${secs}`;
+            }
+        }
+
+        function seekDemoAudio(e) {
+            const player = document.getElementById('demo-audio-player');
+            const bar = e.currentTarget;
+            const clickPos = (e.clientX - bar.getBoundingClientRect().left) / bar.offsetWidth;
+            if (player.duration) {
+                player.currentTime = clickPos * player.duration;
+            }
+        }
+
+        function onDemoAudioEnded() {
+            document.getElementById('demo-play-icon').className = "fa-solid fa-play text-xl ml-1";
+            document.getElementById('demo-progress-bar').style.width = '100%';
+        }
     </script>
 </body>
 </html>
