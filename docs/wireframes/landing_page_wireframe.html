@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        window.FontAwesomeConfig = {
+          autoReplaceSvg: 'nest'
+        };
+      </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NarrateMe | AI-Powered Educational Stories</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ink-dark': '#1C2B4A',
+                        'surface-base': '#FFFDF7',
+                        'surface-raised': '#FFFBF0',
+                        'surface-elevated': '#FFF9E6',
+                        'border-fine': '#EADCC9',
+                        'accent-teal': '#1A9B8C',
+                        'accent-teal-soft': '#D9F3EE',
+                        'accent-coral': '#F97B5C',
+                        'accent-yellow': '#F5A623',
+                    },
+                    fontFamily: {
+                        sans: ['Nunito', 'sans-serif'],
+                    },
+                    borderRadius: {
+                        'jumbo': '2rem',
+                    },
+                    keyframes: {
+                        pulseDot: {
+                            '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+                            '50%': { opacity: '0.5', transform: 'scale(1.5)' },
+                        }
+                    },
+                    animation: {
+                        pulseDot: 'pulseDot 2s infinite ease-in-out',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Nunito', sans-serif; }
+        .word-punchout { color: #1A9B8C; display: inline; }
+        .nav-link-underline::after {
+            content: '';
+            position: absolute;
+            bottom: -4px; left: 0;
+            width: 100%; height: 2px;
+            background: currentColor;
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.3s ease;
+        }
+        .nav-link-underline:hover::after {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+    </style>
+</head>
+<body class="bg-surface-base text-ink-dark antialiased overflow-x-hidden">
+
+    <!-- Navigation -->
+    <header class="fixed top-0 left-0 w-full z-50 px-6 py-4 flex items-center justify-between bg-surface-base/80 backdrop-blur-md border-b border-border-fine">
+        <div class="flex items-center space-x-8">
+            <a href="#" class="flex items-center space-x-2 text-2xl font-extrabold tracking-tight">
+                <span class="text-accent-teal"><i class="fa-solid fa-book-open-reader mr-1"></i><i class="fa-solid fa-sparkles text-xs ml-1 align-super"></i></span>
+                <span>Narrate<span class="text-accent-yellow">Me</span></span>
+            </a>
+            <nav class="hidden md:flex items-center space-x-8 text-sm font-semibold">
+                <a href="#how-it-works" class="relative nav-link-underline">How It Works</a>
+                <a href="#for-whom" class="relative nav-link-underline">For Teachers</a>
+                <a href="#for-whom" class="relative nav-link-underline">For Parents</a>
+                <div class="w-1 h-1 rounded-full bg-accent-yellow animate-pulseDot"></div>
+            </nav>
+        </div>
+        <button class="bg-accent-yellow text-ink-dark px-6 py-2 rounded-full text-sm font-bold hover:bg-accent-coral transition-colors">Try It Free &rarr;</button>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-screen pt-32 pb-20 px-6 md:px-12 lg:px-20 flex flex-col md:flex-row items-center justify-between overflow-hidden bg-surface-base">
+        <!-- Background Elements -->
+        <div class="absolute inset-0 z-0 opacity-40 pointer-events-none">
+            <img class="absolute -top-20 -left-20 w-96 h-96 rounded-full blur-3xl bg-accent-teal-soft" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_4a6b9b9dea_98809571cc17be61.png" alt="soft abstract watercolor blob shape, pale teal, dreamy texture" />
+            <img class="absolute top-1/4 right-0 w-64 h-64 rounded-full blur-2xl bg-accent-yellow/20" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_4a6b9b9dea_da84e2f5bd8b9faf.png" alt="soft abstract watercolor blob shape, pale warm yellow, dreamy texture" />
+        </div>
+
+        <!-- Left Content -->
+        <div class="z-10 max-w-xl">
+            <h1 class="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight mb-6">
+                Turn Any Story Into a<br>Magical <span class="word-punchout">Reading</span> Adventure
+            </h1>
+            <p class="text-lg md:text-xl text-gray-600 mb-8">
+                Paste or type a story, and watch AI bring it to life with illustrations and narration — in under 60 seconds. Perfect for Grades 1–3.
+            </p>
+            <div class="flex flex-wrap gap-4">
+                <button class="bg-accent-teal text-white px-8 py-3 rounded-full font-bold hover:bg-accent-coral transition-all transform hover:scale-105">Create Your Story</button>
+                <button class="border-2 border-accent-teal text-accent-teal px-8 py-3 rounded-full font-bold hover:bg-accent-teal hover:text-white transition-all">See a Demo</button>
+            </div>
+            <div class="mt-12 flex items-center space-x-6 text-sm font-medium text-gray-500">
+                <span class="flex items-center"><i class="fa-solid fa-check-circle text-accent-teal mr-2"></i>Built for Grades 1–3</span>
+                <span class="flex items-center"><i class="fa-solid fa-bolt text-accent-yellow mr-2"></i>Ready in 60 Seconds</span>
+                <span class="flex items-center"><i class="fa-solid fa-paintbrush text-accent-coral mr-2"></i>AI Illustrations</span>
+                <span class="flex items-center"><i class="fa-solid fa-headphones text-accent-teal mr-2"></i>Narrated Audio</span>
+            </div>
+        </div>
+
+        <!-- Right Visual -->
+        <div class="z-10 mt-12 md:mt-0 relative w-full max-w-lg md:max-w-xl lg:max-w-2xl">
+            <img class="rounded-jumbo shadow-2xl transform hover:scale-105 transition-transform duration-500" aspect="16/9" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_1520eaef1b_19d3cf362b0e3958.png" alt="child sitting on a giant open book surrounded by floating illustrated story characters like a dragon" />
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="py-24 px-6 md:px-12 lg:px-20 bg-surface-raised">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-extrabold mb-4">How It Works</h2>
+                <p class="text-xl text-gray-600">Three simple steps to create an unforgettable story experience.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+                <!-- Connecting Line (Desktop Only) -->
+                <div class="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-border-fine -z-10 -translate-y-1/2"></div>
+                <div class="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-accent-teal/20 -z-10 -translate-y-1/2"></div>
+
+                <!-- Step 1 -->
+                <div class="group relative bg-surface-elevated p-8 rounded-jumbo shadow-sm hover:shadow-xl transition-all">
+                    <div class="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-accent-teal text-white rounded-full flex items-center justify-center font-bold text-xl z-10">1</div>
+                    <div class="overflow-hidden rounded-xl mb-6 aspect-[4/5]">
+                        <img class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_324640a5ab_d878472f19c122a1.png" alt="child happily typing a short story into a tablet app, bright colorful classroom setting, editorial p" />
+                    </div>
+                    <h3 class="text-2xl font-bold mb-3">Paste Your Story</h3>
+                    <p class="text-gray-600">Type or paste any short story (up to 500 words). The AI understands it instantly.</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="group relative bg-surface-elevated p-8 rounded-jumbo shadow-sm hover:shadow-xl transition-all">
+                    <div class="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-accent-coral text-white rounded-full flex items-center justify-center font-bold text-xl z-10">2</div>
+                    <div class="overflow-hidden rounded-xl mb-6 aspect-[4/5]">
+                        <img class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_099858dea4_f00baf0d144ed73c.png" alt="illustrated storybook pages coming to life with glowing magical effects, whimsical art style, close " />
+                    </div>
+                    <h3 class="text-2xl font-bold mb-3">AI Brings It to Life</h3>
+                    <p class="text-gray-600">NarrateMe generates beautiful illustrations and a warm narration voice automatically.</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="group relative bg-surface-elevated p-8 rounded-jumbo shadow-sm hover:shadow-xl transition-all">
+                    <div class="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-accent-yellow text-ink-dark rounded-full flex items-center justify-center font-bold text-xl z-10">3</div>
+                    <div class="overflow-hidden rounded-xl mb-6 aspect-[4/5]">
+                        <img class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_886587a13b_b2c34faf3aae8024.png" alt="happy young student listening to an audiobook on headphones with wide eyes, cozy reading corner, edi" />
+                    </div>
+                    <h3 class="text-2xl font-bold mb-3">Press Play!</h3>
+                    <p class="text-gray-600">Share the interactive story with your class or family. Watch their faces light up.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- For Whom Section -->
+    <section id="for-whom" class="py-24 px-6 md:px-12 lg:px-20 bg-surface-base">
+        <div class="max-w-7xl mx-auto space-y-24">
+            <!-- For Teachers -->
+            <div class="flex flex-col md:flex-row items-center gap-12 bg-accent-teal-soft p-10 rounded-jumbo">
+                <div class="w-full md:w-1/2">
+                    <img class="rounded-jumbo shadow-xl w-full aspect-[4/5] object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_7f7d250da2_57977f4c703f14df.png" alt="teacher smiling while reading an illustrated story on a screen to engaged elementary students, warm " />
+                </div>
+                <div class="w-full md:w-1/2">
+                    <h3 class="text-3xl md:text-4xl font-extrabold mb-4">For Teachers</h3>
+                    <p class="text-lg text-gray-700 mb-6">
+                        Create engaging reading materials in seconds. Boost literacy skills with personalized stories that match your curriculum.
+                    </p>
+                    <a href="#" class="inline-flex items-center font-bold text-accent-teal hover:text-accent-coral transition-colors">
+                        Learn More <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- For Parents -->
+            <div class="flex flex-col md:flex-row-reverse items-center gap-12 bg-[#FFF4E0] p-10 rounded-jumbo">
+                <div class="w-full md:w-1/2">
+                    <img class="rounded-jumbo shadow-xl w-full aspect-[4/5] object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_fd3d5b7f1a_969aa1b2b0f33c68.png" alt="parent and child snuggled together reading a colorful illustrated storybook at bedtime, cozy warm li" />
+                </div>
+                <div class="w-full md:w-1/2">
+                    <h3 class="text-3xl md:text-4xl font-extrabold mb-4">For Parents</h3>
+                    <p class="text-lg text-gray-700 mb-6">
+                        Make bedtime magical. Turn your child's favorite ideas into narrated, illustrated adventures they'll love to revisit.
+                    </p>
+                    <a href="#" class="inline-flex items-center font-bold text-accent-coral hover:text-accent-teal transition-colors">
+                        Learn More <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Preview Section (dark) -->
+    <section class="py-24 px-6 md:px-12 lg:px-20 bg-ink-dark text-white">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-extrabold mb-4">See the Magic in Action</h2>
+                <p class="text-xl text-accent-teal-soft">A real story, created in seconds with NarrateMe.</p>
+            </div>
+
+            <div class="relative max-w-4xl mx-auto">
+                <div class="absolute -top-12 left-1/2 -translate-x-1/2 text-accent-yellow font-bold text-lg tracking-widest">01 / 01</div>
+                <div class="bg-surface-raised rounded-jumbo overflow-hidden shadow-2xl">
+                    <img class="w-full aspect-video object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_0218fd05a6_34eaceff916cc2c3.png" alt="vivid illustrated story scene of a friendly dragon flying over a candy-colored village at sunset, ch" />
+                    <div class="p-8">
+                        <p class="text-ink-dark text-lg leading-relaxed mb-6">
+                            "Once upon a time, in a village made of sweets, lived a tiny dragon named Spark who loved to share his warmth with everyone..."
+                        </p>
+                        <div class="flex items-center justify-between border-t border-border-fine pt-6">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 rounded-full bg-accent-teal-soft flex items-center justify-center text-accent-teal">
+                                    <i class="fa-solid fa-play"></i>
+                                </div>
+                                <div class="h-1 flex-1 bg-border-fine rounded-full overflow-hidden">
+                                    <div class="h-full w-1/3 bg-accent-teal"></div>
+                                </div>
+                                <span class="text-xs font-mono text-gray-500">0:42</span>
+                            </div>
+                            <div class="flex -space-x-2">
+                                <img class="w-10 h-10 rounded-full border-2 border-ink-dark" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_417e24b606_6f72fe8ecccf848d.png" alt="portrait headshot of a smiling female elementary teacher, without background" />
+                                <img class="w-10 h-10 rounded-full border-2 border-ink-dark" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_417e24b606_aa6f81cf048ccbfb.png" alt="portrait headshot of a smiling man, parent, without background" />
+                                <img class="w-10 h-10 rounded-full border-2 border-ink-dark" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_417e24b606_3f564d2c8d937cd0.png" alt="portrait headshot of a smiling young woman, educator, without background" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-accent-yellow text-ink-dark px-6 py-2 rounded-full font-bold text-sm whitespace-nowrap opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                    <i class="fa-solid fa-eye mr-2"></i>Quickview
+                </div>
+            </div>
+
+            <div class="mt-20 text-center">
+                <p class="text-accent-teal-soft text-lg">No account needed. No credit card. Just stories.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="py-20 px-6 md:px-12 lg:px-20 bg-surface-base">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+            <div>
+                <div class="text-6xl font-extrabold text-accent-teal mb-2">500+</div>
+                <div class="text-sm font-semibold uppercase tracking-widest text-gray-500">Stories Created</div>
+            </div>
+            <div>
+                <div class="text-6xl font-extrabold text-accent-coral mb-2">4.9</div>
+                <div class="text-sm font-semibold uppercase tracking-widest text-gray-500">Teacher Rating</div>
+            </div>
+            <div>
+                <div class="text-6xl font-extrabold text-accent-yellow mb-2">60</div>
+                <div class="text-sm font-semibold uppercase tracking-widest text-gray-500">Seconds to First Story</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="py-24 px-6 md:px-12 lg:px-20 bg-gradient-to-br from-accent-yellow to-accent-coral text-white">
+        <div class="max-w-3xl mx-auto text-center">
+            <h2 class="text-4xl md:text-5xl font-extrabold mb-6">Ready to Bring Stories to Life?</h2>
+            <p class="text-xl mb-10 opacity-90">Join thousands of teachers and parents creating magical reading moments every day.</p>
+            <button class="bg-accent-teal text-white px-12 py-4 rounded-full font-bold text-lg hover:bg-ink-dark transition-all transform hover:scale-105 shadow-xl">
+                Start Creating — It's Free
+            </button>
+            <p class="mt-6 text-sm opacity-80">No signup required for your first story.</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-ink-dark text-white py-16 px-6 md:px-12 lg:px-20">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+            <div class="col-span-1 md:col-span-2">
+                <a href="#" class="flex items-center space-x-2 text-2xl font-extrabold tracking-tight mb-6">
+                    <span class="text-accent-teal"><i class="fa-solid fa-book-open-reader mr-1"></i><i class="fa-solid fa-sparkles text-xs ml-1 align-super"></i></span>
+                    <span>Narrate<span class="text-accent-yellow">Me</span></span>
+                </a>
+                <p class="text-gray-400 max-w-sm">Empowering young readers through AI-generated stories that inspire imagination and joy.</p>
+            </div>
+            <div>
+                <h4 class="font-bold mb-6">Company</h4>
+                <ul class="space-y-4 text-gray-400">
+                    <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                    <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
+                    <li><a href="#" class="hover:text-white transition-colors">Contact Us</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold mb-6">Connect</h4>
+                <div class="flex space-x-4 mb-8">
+                    <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-accent-teal transition-colors"><i class="fa-brands fa-twitter"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-accent-teal transition-colors"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-accent-teal transition-colors"><i class="fa-brands fa-facebook-f"></i></a>
+                </div>
+                <div class="flex">
+                    <input type="email" placeholder="Your email" class="bg-white/10 border-none rounded-l-full px-4 py-2 w-full focus:ring-1 focus:ring-accent-teal outline-none">
+                    <button class="bg-accent-teal px-4 py-2 rounded-r-full hover:bg-accent-coral transition-colors"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto mt-16 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
+            <p>&copy; 2026 NarrateMe. All rights reserved.</p>
+            <p class="mt-2 md:mt-0">Stories that spark imagination.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Simple ticker effect for the hero (replaces canvas marquee)
+        const tickerText = "NarrateMe • NarrateMe • NarrateMe • ";
+        let tickerEl = document.createElement('div');
+        tickerEl.className = 'fixed top-24 left-0 w-full pointer-events-none z-40 text-ink-dark font-mono text-xs opacity-50 overflow-hidden whitespace-nowrap';
+        tickerEl.innerHTML = `<div class="inline-block px-4">${tickerText}</div>`;
+        document.body.appendChild(tickerEl);
+    </script>
+</body>
+</html>

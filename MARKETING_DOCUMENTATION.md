@@ -3,6 +3,9 @@
 * **Contribution:** Marketing wireframe documentation and product positioning improvements
 * **Branch:** `marketing`
 * **Purpose:** Improve NarrateMe's ability to communicate its value to users, developers, contributors, and prospective investors/partners.
+* **Wireframe Assets:** Located in [`docs/wireframes/`](file:///c:/Users/Richard/Documents/GitHub/NarrateMe/docs/wireframes):
+  * [`landing_page_wireframe.html`](file:///c:/Users/Richard/Documents/GitHub/NarrateMe/docs/wireframes/landing_page_wireframe.html) (Landing Page & Creation Studio — formerly `1.html`)
+  * [`demo_library_wireframe.html`](file:///c:/Users/Richard/Documents/GitHub/NarrateMe/docs/wireframes/demo_library_wireframe.html) (Demo Story Gallery & Exploration Studio — formerly `2.html`)
 
 ---
 
@@ -54,10 +57,10 @@ Visual storytelling provides critical cognitive scaffolding for young readers:
 
 ## 5. How Wireframes Communicate Product Value
 
-The two primary marketing assets (`1.html` and `2.html`) act as high-converting sales and product demonstration channels:
+The two primary marketing wireframe assets in [`docs/wireframes/`](file:///c:/Users/Richard/Documents/GitHub/NarrateMe/docs/wireframes) act as high-converting sales and product demonstration channels:
 
-* **Conversion & Positioning (`1.html`):** Establishes immediate emotional connection, highlights speed ("under 60 seconds"), and displays live product demos with social proof.
-* **Resilience & Discovery (`2.html`):** Showcases product versatility with curated, grade-level story cards while serving as an instant fallback during live investor pitches and sales demos.
+* **Conversion & Positioning ([`landing_page_wireframe.html`](file:///c:/Users/Richard/Documents/GitHub/NarrateMe/docs/wireframes/landing_page_wireframe.html)):** Establishes immediate emotional connection, highlights speed ("under 60 seconds"), and displays live product demos with social proof.
+* **Resilience & Discovery ([`demo_library_wireframe.html`](file:///c:/Users/Richard/Documents/GitHub/NarrateMe/docs/wireframes/demo_library_wireframe.html)):** Showcases product versatility with curated, grade-level story cards while serving as an instant fallback during live investor pitches and sales demos.
 
 ---
 
@@ -77,7 +80,7 @@ The two primary marketing assets (`1.html` and `2.html`) act as high-converting 
 
 # Wireframe Marketing Analysis
 
-## Wireframe 1: `1.html` — Story Creation Studio & SaaS Landing Page
+## Wireframe 1: `docs/wireframes/landing_page_wireframe.html` — Story Creation Studio & SaaS Landing Page
 
 ### Visual Architecture & Design Tokens
 * **Typography:** `Nunito` (rounded, accessible, friendly font family).
@@ -103,7 +106,7 @@ Within 5 seconds, a visitor understands:
 
 #### 5. Strategic Marketing Channel Usage
 
-| Marketing Channel | How `1.html` Is Utilized |
+| Marketing Channel | How `landing_page_wireframe.html` Is Utilized |
 | :--- | :--- |
 | **Website Landing Page** | Primary conversion engine with clear value propositions, CTA buttons, and feature breakdowns. |
 | **Social Media Promotion** | Hero section screenshots and screen-recordings of the preview player serve as high-engagement video ads on Instagram, TikTok, and LinkedIn. |
@@ -113,7 +116,7 @@ Within 5 seconds, a visitor understands:
 
 ---
 
-## Wireframe 2: `2.html` — Interactive Demo Story Library & Content Gallery
+## Wireframe 2: `docs/wireframes/demo_library_wireframe.html` — Interactive Demo Story Library & Content Gallery
 
 ### Visual Architecture & Design Tokens
 * **Hero Banner:** Dark gradient banner (`bg-gradient-to-br from-ink-dark to-teal-900`) with floating animated emojis (`📖`, `⭐`, `✨`, `🌟`).
@@ -138,7 +141,7 @@ Within 5 seconds, a visitor understands:
 
 #### 5. Strategic Marketing Channel Usage
 
-| Marketing Channel | How `2.html` Is Utilized |
+| Marketing Channel | How `demo_library_wireframe.html` Is Utilized |
 | :--- | :--- |
 | **Website Gallery / Explore** | Serves as the primary content discovery hub for returning users and educators seeking inspiration. |
 | **Social Media Promotion** | Story cards (e.g., *Benny's Glowing Acorn*, *Zara's Space Garden*) can be featured as individual content spotlights. |
