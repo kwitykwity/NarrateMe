@@ -62,7 +62,7 @@ NarrateMe helps teachers and parents of kids in grades 1–3 turn any plain writ
 | Image generation | OpenAI image model (returns base64 PNG) |
 | Text-to-Speech | ElevenLabs (`AsyncElevenLabs`, returns base64 MP3) |
 | Avatar | Static image / 2-pose swap *(planned — not yet integrated)* |
-| Hosting | Vercel |
+| Hosting | Vercel (frontend) + Railway (backend) |
 | Storage | None required for MVP — stateless, one-shot generation |
 
 ---
@@ -102,7 +102,64 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`. The frontend expects the backend at `http://localhost:8000`.
+Open `http://localhost:3000`. The frontend defaults to the backend at
+`http://localhost:8000`. To point it elsewhere, copy `frontend/.env.example` to
+`frontend/.env.local` and set `NEXT_PUBLIC_API_URL`.
+
+---
+
+## Deployment
+
+The two halves deploy separately: the FastAPI backend to **Railway** (an always-on
+server host — the image/narration calls run 50–120s, so serverless platforms with short
+request limits won't work), and the Next.js frontend to **Vercel**. Deploy the backend
+first so you have its URL for the frontend.
+
+### 1. Backend → Railway
+
+1. Create a new Railway project → **Deploy from GitHub repo** and select this repo.
+2. In the service **Settings**, set **Root Directory** to `backend` (the app lives in a
+   subdirectory).
+3. Railway (Nixpacks) auto-detects `requirements.txt`. Set the **Start Command** to:
+   ```
+   uvicorn app.main:app --host 0.0.0.0 --port $PORT
+   ```
+   Railway injects `$PORT`; binding `0.0.0.0` is required.
+4. Add environment variables (**Variables** tab):
+   - `API_KEY` — Anthropic API key (scene splitting)
+   - `OPENAI_API_KEY` — OpenAI key (image generation)
+   - `ELEVENLABS_API_KEY` — ElevenLabs key (narration)
+   - *(optional)* `IMAGE_QUALITY` (`low`/`medium`/`high`, default `medium`) and
+     `IMAGE_SIZE` (default `1024x1024`)
+   - Leave `CORS_ORIGINS` unset for now (added in step 3 below).
+   - *(optional)* pin Python via a `.python-version` file or `NIXPACKS_PYTHON_VERSION`;
+     the default recent Python (3.11+) works for this code.
+5. Deploy, then verify: open `https://<your-railway-domain>/health` — it should return
+   `{"status":"healthy"}`.
+
+### 2. Frontend → Vercel
+
+1. Import the repo into Vercel and set **Root Directory** to `frontend` (Vercel
+   auto-detects Next.js).
+2. Add an environment variable:
+   - `NEXT_PUBLIC_API_URL` = your Railway backend URL (e.g.
+     `https://<your-railway-domain>`)
+   - `NEXT_PUBLIC_` vars are inlined at **build time**, so set this before deploying (or
+     redeploy after changing it).
+3. Deploy, and note the resulting Vercel URL (e.g. `https://narrateme.vercel.app`).
+
+### 3. Close the CORS loop
+
+1. Back in Railway, set `CORS_ORIGINS` to your Vercel production URL
+   (e.g. `https://narrateme.vercel.app`) and redeploy the backend.
+   - Multiple origins are comma-separated. Vercel *preview* deploys get dynamic URLs; to
+     allow those too you'd switch to `allow_origin_regex` in `backend/app/main.py` — the
+     production URL alone is fine for a demo.
+
+### 4. Smoke test
+
+Load the Vercel site, paste a story, and confirm images and narration generate with no
+CORS errors in the browser console.
 
 ---
 

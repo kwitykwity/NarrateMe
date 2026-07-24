@@ -22,3 +22,34 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* Owl narrator "talking" bob — a gentle nod applied only while the current
+   scene's narration is actually playing (the audio element's play/pause/ended
+   events toggle the .owl-talking class). No new art or API cost; it just makes
+   the static owl feel like it's speaking along with the audio. */
+@keyframes owl-talk {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-6%) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(0) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-6%) rotate(2deg);
+  }
+}
+
+.owl-talking {
+  animation: owl-talk 0.6s ease-in-out infinite;
+}
+
+/* Respect readers who prefer less motion: hold the owl still. */
+@media (prefers-reduced-motion: reduce) {
+  .owl-talking {
+    animation: none;
+  }
+}

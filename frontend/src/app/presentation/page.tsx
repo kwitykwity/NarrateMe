@@ -5,8 +5,9 @@ import Link from "next/link";
 import { Fragment, useState, useEffect, useRef, useSyncExternalStore } from "react";
 import { PageDoodles } from "../components/PageDoodles";
 import { T } from "../lib/design";
+import OwlAvatar from "./OwlAvatar";
 
-const API_URL = "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 // Used with useSyncExternalStore to detect client-side hydration without
 // triggering a setState-in-effect (sessionStorage is client-only).
@@ -48,6 +49,9 @@ interface Scene {
   audio_url?: string;
   audio_error?: boolean;
   word_timings?: WordTiming[];
+  // Dominant tone tagged for this scene (happy/sad/excited/scared/calm), used to
+  // pick the owl narrator's expression. Falls back to a default owl if absent.
+  emotion?: string;
 }
 
 // Max requests in flight at once, per resource. High concurrency inflates the
@@ -91,6 +95,7 @@ interface BackupStory {
     image_url: string;
     audio_url: string;
     word_timings?: WordTiming[];
+    emotion?: string;
   }[];
 }
 
@@ -111,6 +116,7 @@ async function loadBackupStory(signal?: AbortSignal): Promise<ScenesData> {
       image_url: s.image_url,
       audio_url: s.audio_url,
       word_timings: s.word_timings,
+      emotion: s.emotion,
     })),
   };
 }
@@ -130,9 +136,17 @@ function PresentationContent() {
   // When true, each scene's narration plays automatically and advances to the
   // next scene when the audio ends (hands-free read-along).
   const [autoAdvance, setAutoAdvance] = useState(false);
+  // True once the reader clicks "Start read-along". That click is the user
+  // gesture browsers require before narration audio may autoplay, so until it
+  // happens we show a start overlay rather than let the initial play() be
+  // silently rejected (which would stall auto-advance on scene 1).
+  const [hasStarted, setHasStarted] = useState(false);
   // Index of the word currently being narrated in the active scene (-1 = none),
   // driven by the audio element's timeupdate events.
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
+  // True while narration is actively playing, driven by the audio element's
+  // play/pause/ended events; toggles the owl's "talking" animation.
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -337,6 +351,7 @@ function PresentationContent() {
   const goToScene = (updater: (c: number) => number) => {
     setCurrentScene(updater);
     setCurrentWordIndex(-1);
+    setIsSpeaking(false);
   };
 
   // Manual escape hatch: load the backup story on demand (e.g. from the error
@@ -443,11 +458,31 @@ function PresentationContent() {
     }
   };
 
+  // Begin the hands-free read-along from the current (first) scene. This runs
+  // from a click, so the browser honors this initial play(); once playback has
+  // started, the auto-advance effect may autoplay every subsequent clip too.
+  const startReadAlong = () => {
+    setHasStarted(true);
+    setAutoAdvance(true);
+    audioRef.current?.play().catch(() => {});
+  };
+
+  // Replay the current scene's narration from the start (rewind to 0 and play),
+  // clearing the word highlight so it re-follows from the first word.
+  const replayScene = () => {
+    const el = audioRef.current;
+    if (!el) return;
+    el.currentTime = 0;
+    setCurrentWordIndex(-1);
+    el.play().catch(() => {});
+  };
+
   // When a scene's narration finishes, clear the highlight; during read-along
   // also advance to the next scene (its audio auto-plays via the effect), or
   // stop on the last scene.
   const handleAudioEnded = () => {
     setCurrentWordIndex(-1);
+    setIsSpeaking(false);
     if (!autoAdvance) return;
     if (currentScene < totalScenes - 1) {
       setCurrentScene((c) => c + 1);
@@ -492,7 +527,46 @@ function PresentationContent() {
       )}
 
       {/* Scene Card */}
-      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden shadow-lg">
+      <div className="relative bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden shadow-lg">
+        {/* Start overlay: the single user gesture that unlocks narration
+            autoplay. Shown until the reader begins; the primary button enables
+            once the first scene's narration is ready. The secondary action
+            always lets the reader proceed so a slow/failed clip can't trap them. */}
+        {!hasStarted && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-white/85 dark:bg-black/80 backdrop-blur-sm">
+            <button
+              onClick={startReadAlong}
+              disabled={!scene.audio_url}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-blue-600 text-white text-lg font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-lg"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              <span>Start read-along</span>
+            </button>
+            {scene.audio_url ? (
+              <button
+                onClick={() => setHasStarted(true)}
+                className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+              >
+                Skip and explore on my own
+              </button>
+            ) : scene.audio_error ? (
+              <button
+                onClick={() => setHasStarted(true)}
+                className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+              >
+                Narration unavailable — continue without it
+              </button>
+            ) : (
+              <span className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+                <span className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></span>
+                Preparing narration...
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Image */}
         <div className="relative aspect-video bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
           {scene.image_url ? (
@@ -529,11 +603,15 @@ function PresentationContent() {
               <span className="text-sm">Generating image...</span>
             </div>
           )}
+
+          {/* Owl narrator: self-contained, fetches + draws itself from the
+              scene's emotion. Mounted here so it sits at the image's bottom edge. */}
+          <OwlAvatar emotion={scene.emotion} speaking={isSpeaking} />
         </div>
 
         {/* Text */}
-        <div className="p-6">
-          <p className="text-lg text-zinc-800 dark:text-zinc-200 leading-relaxed">
+        <div className="px-6 pb-6 pt-14">
+          <p className="text-base text-zinc-800 dark:text-zinc-200 leading-relaxed">
             {scene.word_timings && scene.word_timings.length > 0
               ? scene.word_timings.map((w, i) => (
                   <Fragment key={i}>
@@ -555,18 +633,33 @@ function PresentationContent() {
           {/* Narration */}
           <div className="mt-4">
             {scene.audio_url ? (
-              <audio
-                key={scene.scene_number}
-                ref={audioRef}
-                controls
-                preload="auto"
-                src={scene.audio_url}
-                onTimeUpdate={handleTimeUpdate}
-                onEnded={handleAudioEnded}
-                className="w-full"
-              >
-                Your browser does not support audio playback.
-              </audio>
+              <>
+                <audio
+                  key={scene.scene_number}
+                  ref={audioRef}
+                  controls
+                  preload="auto"
+                  src={scene.audio_url}
+                  onTimeUpdate={handleTimeUpdate}
+                  onEnded={handleAudioEnded}
+                  onPlay={() => setIsSpeaking(true)}
+                  onPause={() => setIsSpeaking(false)}
+                  className="w-full"
+                >
+                  Your browser does not support audio playback.
+                </audio>
+                <div className="mt-2 flex justify-center">
+                  <button
+                    onClick={replayScene}
+                    className="inline-flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                      <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
+                    </svg>
+                    <span>Replay</span>
+                  </button>
+                </div>
+              </>
             ) : scene.audio_error ? (
               <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-500">
                 <svg
@@ -595,25 +688,28 @@ function PresentationContent() {
         </div>
       </div>
 
-      {/* Read-along control */}
-      <div className="mt-6 flex justify-center">
-        <button
-          onClick={toggleReadAlong}
-          disabled={audioLoaded === 0}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          {autoAdvance ? (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-              <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          )}
-          <span>{autoAdvance ? "Pause" : "Play story"}</span>
-        </button>
-      </div>
+      {/* Read-along control: available once started; before that the start
+          overlay on the scene card is the entry point. */}
+      {hasStarted && (
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={toggleReadAlong}
+            disabled={audioLoaded === 0}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {autoAdvance ? (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
+            <span>{autoAdvance ? "Pause" : "Play story"}</span>
+          </button>
+        </div>
+      )}
 
       {/* Navigation */}
       <div className="mt-6 flex items-center justify-between">

@@ -18,7 +18,7 @@ def get_client():
 
 SYSTEM_PROMPT = """You are a children's story editor specializing in creating illustrated storybooks for kids in grades 1-3.
 
-Your task is to split a story into 3-5 scenes suitable for an illustrated presentation. Each scene should be a natural narrative beat (beginning, middle, end structure).
+Your task is to split a story into exactly 5 scenes suitable for an illustrated presentation. Each scene should be a natural narrative beat, together forming a beginning, middle, and end.
 
 You must respond with valid JSON in this exact format:
 {
@@ -27,18 +27,21 @@ You must respond with valid JSON in this exact format:
     {
       "scene_number": 1,
       "text": "The exact text from the story for this scene.",
-      "image_prompt": "A detailed, child-friendly image prompt for DALL-E 3 to illustrate this scene. Include the character description details for consistency."
+      "image_prompt": "A detailed, child-friendly image prompt for DALL-E 3 to illustrate this scene. Include the character description details for consistency.",
+      "emotion": "happy"
     }
   ]
 }
 
 Guidelines:
-- Split into 3-5 scenes based on story length and natural narrative breaks
+- Always produce exactly 5 scenes. Find natural narrative breaks; if the story is short, divide it into finer beats so there are still 5 scenes.
 - Keep the original story text intact, just divided into scenes
+- Each part of the original text must appear in exactly one scene — never repeat, overlap, or duplicate text between scenes. Concatenating all scene texts in order must reproduce the original story with no repetition. If the story is short, split sentences into smaller phrases to reach 5 scenes rather than repeating any text.
 - Character description should be detailed enough for visual consistency across scenes
 - Image prompts should be child-friendly, colorful, and suitable for a storybook
 - Image prompts should always reference the character's consistent appearance
-- Use a warm, friendly illustration style (e.g., "children's book illustration style, warm colors, friendly")"""
+- Use a warm, friendly illustration style (e.g., "children's book illustration style, warm colors, friendly")
+- Tag each scene with an "emotion" that captures its dominant emotional tone. You MUST pick exactly one of: "happy", "sad", "excited", "scared", "calm". This drives a narrator owl's facial expression, so choose the tone a child would feel during that scene."""
 
 
 async def split_story_into_scenes(story: str, timeout_seconds: int = 60) -> SceneResponse:
