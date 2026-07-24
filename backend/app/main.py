@@ -24,17 +24,26 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Allowed frontend origins, comma-separated in CORS_ORIGINS (e.g. the Vercel URL in
-# prod). Falls back to the local dev frontend so local setups need no config.
+# Allowed frontend origins, via two mechanisms combined (an origin passes if it
+# matches either):
+#  - CORS_ORIGINS: comma-separated exact origins (local dev + any explicit prod
+#    origin). Falls back to the local dev frontend so local setups need no config.
+#  - CORS_ORIGIN_REGEX: matches this project's Vercel URLs. Vercel mints a unique
+#    URL per deploy/preview, so a fixed allowlist breaks whenever one is opened;
+#    the regex accepts them all without re-editing CORS_ORIGINS each deploy.
 cors_origins = [
     o.strip()
     for o in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
     if o.strip()
 ]
+cors_origin_regex = os.getenv(
+    "CORS_ORIGIN_REGEX", r"https://narrateme-[a-z0-9-]+\.vercel\.app"
+)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
+    allow_origin_regex=cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
