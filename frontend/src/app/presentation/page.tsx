@@ -436,6 +436,16 @@ function PresentationContent() {
     audioRef.current?.play().catch(() => {});
   };
 
+  // Replay the current scene's narration from the start (rewind to 0 and play),
+  // clearing the word highlight so it re-follows from the first word.
+  const replayScene = () => {
+    const el = audioRef.current;
+    if (!el) return;
+    el.currentTime = 0;
+    setCurrentWordIndex(-1);
+    el.play().catch(() => {});
+  };
+
   // When a scene's narration finishes, clear the highlight; during read-along
   // also advance to the next scene (its audio auto-plays via the effect), or
   // stop on the last scene.
@@ -592,20 +602,33 @@ function PresentationContent() {
           {/* Narration */}
           <div className="mt-4">
             {scene.audio_url ? (
-              <audio
-                key={scene.scene_number}
-                ref={audioRef}
-                controls
-                preload="auto"
-                src={scene.audio_url}
-                onTimeUpdate={handleTimeUpdate}
-                onEnded={handleAudioEnded}
-                onPlay={() => setIsSpeaking(true)}
-                onPause={() => setIsSpeaking(false)}
-                className="w-full"
-              >
-                Your browser does not support audio playback.
-              </audio>
+              <>
+                <audio
+                  key={scene.scene_number}
+                  ref={audioRef}
+                  controls
+                  preload="auto"
+                  src={scene.audio_url}
+                  onTimeUpdate={handleTimeUpdate}
+                  onEnded={handleAudioEnded}
+                  onPlay={() => setIsSpeaking(true)}
+                  onPause={() => setIsSpeaking(false)}
+                  className="w-full"
+                >
+                  Your browser does not support audio playback.
+                </audio>
+                <div className="mt-2 flex justify-center">
+                  <button
+                    onClick={replayScene}
+                    className="inline-flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                      <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
+                    </svg>
+                    <span>Replay</span>
+                  </button>
+                </div>
+              </>
             ) : scene.audio_error ? (
               <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-500">
                 <svg
