@@ -142,6 +142,9 @@ function PresentationContent() {
   // Index of the word currently being narrated in the active scene (-1 = none),
   // driven by the audio element's timeupdate events.
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
+  // True while narration is actively playing, driven by the audio element's
+  // play/pause/ended events; toggles the owl's "talking" animation.
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -346,6 +349,7 @@ function PresentationContent() {
   const goToScene = (updater: (c: number) => number) => {
     setCurrentScene(updater);
     setCurrentWordIndex(-1);
+    setIsSpeaking(false);
   };
 
   // Manual escape hatch: load the backup story on demand (e.g. from the error
@@ -437,6 +441,7 @@ function PresentationContent() {
   // stop on the last scene.
   const handleAudioEnded = () => {
     setCurrentWordIndex(-1);
+    setIsSpeaking(false);
     if (!autoAdvance) return;
     if (currentScene < totalScenes - 1) {
       setCurrentScene((c) => c + 1);
@@ -560,7 +565,7 @@ function PresentationContent() {
 
           {/* Owl narrator: self-contained, fetches + draws itself from the
               scene's emotion. Mounted here so it sits at the image's bottom edge. */}
-          <OwlAvatar emotion={scene.emotion} />
+          <OwlAvatar emotion={scene.emotion} speaking={isSpeaking} />
         </div>
 
         {/* Text */}
@@ -595,6 +600,8 @@ function PresentationContent() {
                 src={scene.audio_url}
                 onTimeUpdate={handleTimeUpdate}
                 onEnded={handleAudioEnded}
+                onPlay={() => setIsSpeaking(true)}
+                onPause={() => setIsSpeaking(false)}
                 className="w-full"
               >
                 Your browser does not support audio playback.

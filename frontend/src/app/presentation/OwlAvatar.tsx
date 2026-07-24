@@ -28,29 +28,44 @@ const DEFAULT_EMOTION = "calm";
 
 export default function OwlAvatar({
   emotion,
+  speaking = false,
   className = "",
 }: {
   emotion?: string;
+  // True while the current scene's narration is playing; drives the "talking"
+  // bob so the owl looks like it's speaking along with the audio.
+  speaking?: boolean;
   className?: string;
 }) {
   const resolved = emotion && OWL_EMOTIONS.includes(emotion) ? emotion : DEFAULT_EMOTION;
 
+  // Split placement from animation: the OUTER div owns positioning (its
+  // -translate offsets sit the owl on the image's bottom edge), while the INNER
+  // badge owns the look + the talking bob. Keeping them separate stops the
+  // animation's transform from clobbering the positioning translate.
   return (
     <div
       className={
         "absolute bottom-0 left-1/2 z-10 h-24 w-24 -translate-x-1/2 translate-y-1/3 " +
-        "overflow-hidden rounded-full border-4 border-white bg-amber-50 shadow-lg " +
-        "dark:border-zinc-800 dark:bg-zinc-800 sm:h-28 sm:w-28 " +
+        "sm:h-28 sm:w-28 " +
         className
       }
     >
-      <Image
-        src={`/owls/${resolved}.png`}
-        alt={`Owl narrator looking ${resolved}`}
-        fill
-        sizes="112px"
-        className="object-cover"
-      />
+      <div
+        className={
+          "relative h-full w-full overflow-hidden rounded-full border-4 border-white " +
+          "bg-amber-50 shadow-lg dark:border-zinc-800 dark:bg-zinc-800 " +
+          (speaking ? "owl-talking" : "")
+        }
+      >
+        <Image
+          src={`/owls/${resolved}.png`}
+          alt={`Owl narrator looking ${resolved}`}
+          fill
+          sizes="112px"
+          className="object-cover"
+        />
+      </div>
     </div>
   );
 }
