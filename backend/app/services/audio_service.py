@@ -1,6 +1,7 @@
 import os
 import logging
 import asyncio
+from elevenlabs import VoiceSettings
 from elevenlabs.client import AsyncElevenLabs
 from elevenlabs.core.api_error import ApiError
 
@@ -14,6 +15,11 @@ WordTiming = dict[str, object]  # {"word": str, "start": float, "end": float}
 DEFAULT_VOICE_ID = "EXAVITQu4vr4xnSDxMaL"
 DEFAULT_MODEL_ID = "eleven_multilingual_v2"
 OUTPUT_FORMAT = "mp3_44100_128"
+
+# Narration playback speed. ElevenLabs accepts 0.7-1.2 (1.0 = normal); 0.9
+# reads slightly slower so early readers (grades 1-3) can follow along, per the
+# PRD's "warm, slower-paced voice" requirement.
+NARRATION_SPEED = 0.9
 
 # ElevenLabs' free tier caps concurrent requests; bursts return 429
 # concurrent_limit_exceeded. Retry a few times with a short backoff so a
@@ -72,6 +78,7 @@ async def generate_narration(
             text=text,
             model_id=DEFAULT_MODEL_ID,
             output_format=OUTPUT_FORMAT,
+            voice_settings=VoiceSettings(speed=NARRATION_SPEED),
         )
 
     for attempt in range(1, MAX_ATTEMPTS + 1):
