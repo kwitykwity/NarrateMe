@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/router";
 
 interface StoryGeneratorProps {
   sectionRef?: React.RefObject<HTMLDivElement | null>;
 }
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const SAMPLE_STORIES = [
   {
@@ -42,12 +43,20 @@ export default function StoryGenerator({ sectionRef }: StoryGeneratorProps) {
     setIsLoading(true);
 
     try {
-      // Save story in sessionStorage for presentation player
+      const res = await fetch(`${API_URL}/api/demo/story`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ story: story.trim() }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Unable to save your story right now.");
+      }
+
       sessionStorage.setItem("narrateme:story", story.trim());
-      // Navigate to presentation page
       window.location.href = "/presentation";
     } catch (err: any) {
-      setErrorMessage("Failed to initiate presentation mode. Please try again.");
+      setErrorMessage(err.message || "Failed to initiate presentation mode. Please try again.");
       setIsLoading(false);
     }
   };

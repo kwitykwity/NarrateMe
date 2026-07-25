@@ -1,5 +1,7 @@
 "use client";
 
+import LandingPageStatus from "./LandingPageStatus";
+
 interface HeroProps {
   onCreateStoryClick: () => void;
   onSeeDemoClick: () => void;
@@ -51,6 +53,7 @@ export default function Hero({ onCreateStoryClick, onSeeDemoClick }: HeroProps) 
             <i className="fa-solid fa-headphones text-accent-teal mr-2"></i>Narrated Audio
           </span>
         </div>
+        <LandingPageStatus storyCount={0} subscriberCount={0} />
       </div>
 
       {/* Right Visual */}

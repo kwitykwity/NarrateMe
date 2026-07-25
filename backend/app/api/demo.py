@@ -1,7 +1,9 @@
 import json
 import logging
 from pathlib import Path
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
+
+from app.services.landing_page_service import get_stats_snapshot
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +19,7 @@ async def get_demo_story():
     Returns the pre-baked demo story manifest for the landing page player.
     """
     logger.info("GET /api/demo - Fetching demo story manifest")
-    
-    # Try reading demo-story.json if available
+
     if DEMO_STORY_PATH.exists():
         try:
             with open(DEMO_STORY_PATH, "r", encoding="utf-8") as f:
@@ -27,7 +28,6 @@ async def get_demo_story():
         except Exception as e:
             logger.error(f"Error reading demo story JSON: {e}")
 
-    # Fallback structure
     return {
         "title": "The Lost Puppy",
         "scenes": [
@@ -87,3 +87,16 @@ async def get_demo_story():
             }
         ]
     }
+
+
+@router.post("/demo/story")
+async def save_demo_story(payload: dict[str, str]):
+    story = payload.get("story", "").strip()
+    if not story:
+        raise ValueError("A story is required")
+
+    from app.services.landing_page_service import store_story_submission
+
+    entry = store_story_submission(story)
+    snapshot = get_stats_snapshot()
+    return {"message": "Story saved", "story": entry, "stats": snapshot}

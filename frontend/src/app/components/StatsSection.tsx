@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 interface StatsData {
   stories_created: number;
+  subscribers: number;
   teacher_rating: number;
   seconds_to_first_story: number;
 }
@@ -12,7 +13,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export default function StatsSection() {
   const [stats, setStats] = useState<StatsData>({
-    stories_created: 500,
+    stories_created: 0,
+    subscribers: 0,
     teacher_rating: 4.9,
     seconds_to_first_story: 60,
   });
@@ -34,7 +36,7 @@ export default function StatsSection() {
 
   return (
     <section className="py-20 px-6 md:px-12 lg:px-20 bg-surface-base border-t border-border-fine/40">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 text-center">
         <div>
           <div className="text-6xl font-extrabold text-accent-teal mb-2">
             {stats.stories_created}+
@@ -49,6 +51,14 @@ export default function StatsSection() {
           </div>
           <div className="text-sm font-semibold uppercase tracking-widest text-gray-500">
             Teacher Rating
+          </div>
+        </div>
+        <div>
+          <div className="text-6xl font-extrabold text-accent-yellow mb-2">
+            {stats.subscribers}+
+          </div>
+          <div className="text-sm font-semibold uppercase tracking-widest text-gray-500">
+            Subscribers
           </div>
         </div>
         <div>

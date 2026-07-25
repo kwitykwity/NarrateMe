@@ -23,6 +23,9 @@ async def create_image(request: ImageRequest):
     except TimeoutError as e:
         logger.error(f"Image generation timeout: {e}")
         raise HTTPException(status_code=504, detail=str(e))
+    except ValueError as e:
+        logger.error(f"Image generation configuration error: {e}")
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.error(f"Image generation error: {type(e).__name__}: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate image")

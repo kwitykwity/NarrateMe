@@ -24,6 +24,9 @@ async def create_audio(request: AudioRequest):
     except TimeoutError as e:
         logger.error(f"Narration generation timeout: {e}")
         raise HTTPException(status_code=504, detail=str(e))
+    except ValueError as e:
+        logger.error(f"Narration generation configuration error: {e}")
+        raise HTTPException(status_code=503, detail=str(e))
     except ApiError as e:
         if e.status_code == 429:
             logger.warning("Narration rate-limited by ElevenLabs (429), returning 429")

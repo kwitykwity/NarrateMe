@@ -28,7 +28,7 @@ export default function ForWhom({ onStartStoryClick }: ForWhomProps) {
               onClick={onStartStoryClick}
               className="inline-flex items-center font-bold text-accent-teal hover:text-accent-coral transition-colors cursor-pointer text-lg"
             >
-              Start Creating Now <i class="fa-solid fa-arrow-right ml-2"></i>
+              Start Creating Now <i className="fa-solid fa-arrow-right ml-2"></i>
             </button>
           </div>
         </div>
@@ -53,7 +53,7 @@ export default function ForWhom({ onStartStoryClick }: ForWhomProps) {
               onClick={onStartStoryClick}
               className="inline-flex items-center font-bold text-accent-coral hover:text-accent-teal transition-colors cursor-pointer text-lg"
             >
-              Try Bedtime Magic <i class="fa-solid fa-arrow-right ml-2"></i>
+              Try Bedtime Magic <i className="fa-solid fa-arrow-right ml-2"></i>
             </button>
           </div>
         </div>

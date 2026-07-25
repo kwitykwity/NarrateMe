@@ -1,7 +1,9 @@
 import re
 import logging
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException
+
+from app.services.landing_page_service import store_subscription
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +27,7 @@ async def subscribe_newsletter(request: SubscribeRequest):
         logger.warning("Invalid email provided to subscription endpoint")
         raise HTTPException(status_code=400, detail="Please enter a valid email address.")
 
+    store_subscription(email)
     logger.info(f"Successfully subscribed email: {email}")
     return SubscribeResponse(
         message="Thank you for subscribing to NarrateMe updates!",

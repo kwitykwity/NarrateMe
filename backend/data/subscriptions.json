@@ -1,0 +1,16 @@
+{
+  "subscriptions": [
+    {
+      "email": "smoke@example.com",
+      "status": "active"
+    },
+    {
+      "email": "smoke@example.com",
+      "status": "active"
+    },
+    {
+      "email": "livecheck@example.com",
+      "status": "active"
+    }
+  ]
+}

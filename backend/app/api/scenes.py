@@ -23,6 +23,9 @@ async def create_scenes(request: StoryRequest):
     except TimeoutError as e:
         logger.error(f"Scene splitting timeout: {e}")
         raise HTTPException(status_code=504, detail=str(e))
+    except ValueError as e:
+        logger.error(f"Scene splitting configuration error: {e}")
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.error(f"Scene splitting error: {type(e).__name__}: {e}")
         raise HTTPException(status_code=500, detail="Failed to split story into scenes")

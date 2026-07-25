@@ -127,6 +127,8 @@ function PresentationContent() {
   const [status, setStatus] = useState<"loading" | "generating" | "done" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
   const [scenesData, setScenesData] = useState<ScenesData | null>(null);
+  const [usedBackupStory, setUsedBackupStory] = useState(false);
+  const [liveGenerationStatus, setLiveGenerationStatus] = useState<"checking" | "ready" | "limited">("checking");
   // True once we've fallen back to the pre-baked backup story instead of live
   // generation, so the UI can flag it.
   const [isBackup, setIsBackup] = useState(false);
@@ -147,6 +149,14 @@ function PresentationContent() {
 
     async function generatePresentation() {
       try {
+        const healthRes = await fetch(`${API_URL}/health`);
+        if (healthRes.ok) {
+          const health = await healthRes.json();
+          const services = health.ai_services ?? {};
+          const configured = Object.values(services).filter((service: any) => service?.configured).length;
+          setLiveGenerationStatus(configured === 3 ? "ready" : "limited");
+        }
+
         // Step 1: Split story into scenes
         setStatus("loading");
         const scenesRes = await fetch(`${API_URL}/api/scenes`, {
@@ -298,14 +308,15 @@ function PresentationContent() {
         if (cancelled) return;
         // Intentional cancellation (StrictMode remount / unmount): stay silent.
         if (err instanceof DOMException && err.name === "AbortError") return;
-        // Live generation failed before we could show anything (e.g. the
-        // scene-split call errored). Fall back to the pre-baked backup story so
-        // a demo still has a complete presentation to play.
+        // Live generation failed before we could show anything (for example,
+        // because the AI services are not configured locally). Fall back to the
+        // bundled backup story so the demo still plays.
         try {
           const backup = await loadBackupStory(controller.signal);
           if (cancelled) return;
           setScenesData(backup);
           setIsBackup(true);
+          setUsedBackupStory(true);
           setStatus("done");
         } catch {
           if (cancelled) return;
@@ -351,6 +362,7 @@ function PresentationContent() {
       const backup = await loadBackupStory();
       setScenesData(backup);
       setIsBackup(true);
+      setUsedBackupStory(true);
       setCurrentScene(0);
       setCurrentWordIndex(-1);
       setStatus("done");
@@ -450,9 +462,17 @@ function PresentationContent() {
 
   return (
     <div className="w-full max-w-4xl">
+      {liveGenerationStatus !== "ready" && (
+        <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-400">
+          {liveGenerationStatus === "limited"
+            ? "Live generation is limited right now, so this demo is using the bundled backup story."
+            : "Checking live generation availability…"}
+        </div>
+      )}
+
       {isBackup && (
         <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-400">
-          Live generation was unavailable — showing a pre-loaded backup story.
+          Live generation is unavailable right now, so this demo is using the bundled backup story.
         </div>
       )}
 
