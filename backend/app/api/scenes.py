@@ -18,7 +18,13 @@ async def create_scenes(request: StoryRequest):
 
     try:
         scenes = await split_story_into_scenes(request.story)
-        logger.info(f"Scene splitting successful. Generated {len(scenes.scenes)} scenes")
+        if scenes.blocked:
+            # Not an error: the story was intentionally withheld by the
+            # content-safety guardrail. Return 200 with the blocked flag so the
+            # frontend can show a friendly notice rather than retrying.
+            logger.info("Scene splitting blocked story as unsuitable for children")
+        else:
+            logger.info(f"Scene splitting successful. Generated {len(scenes.scenes)} scenes")
         return scenes
     except TimeoutError as e:
         logger.error(f"Scene splitting timeout: {e}")

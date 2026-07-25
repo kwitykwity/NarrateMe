@@ -29,5 +29,11 @@ class Scene(BaseModel):
 
 
 class SceneResponse(BaseModel):
-    character_description: str
-    scenes: list[Scene]
+    character_description: str = ""
+    scenes: list[Scene] = []
+    # Content guardrail: set when a story is too intense for young readers to be
+    # faithfully softened, so the frontend shows a friendly notice instead of
+    # generating a presentation. block_reason is a kid-safe explanation for the
+    # adult (never restates the graphic content). Safe stories leave both unset.
+    blocked: bool = False
+    block_reason: str = ""
