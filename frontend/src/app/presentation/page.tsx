@@ -614,13 +614,13 @@ function PresentationContent() {
         )}
 
         {/* Image */}
-        <div className="relative aspect-video bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+        <div className="relative aspect-[3/2] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
           {scene.image_url ? (
             <Image
               src={scene.image_url}
               alt={`Scene ${scene.scene_number}`}
               fill
-              className="object-contain"
+              className="object-cover"
               unoptimized
             />
           ) : scene.image_error ? (
