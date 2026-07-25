@@ -83,6 +83,10 @@ const AUDIO_RETRY_BACKOFF_MS = 0;
 interface ScenesData {
   character_description: string;
   scenes: Scene[];
+  // Set by the backend content-safety guardrail when a story is too intense for
+  // young readers; the player shows a friendly notice instead of generating.
+  blocked?: boolean;
+  block_reason?: string;
 }
 
 // Shape of the pre-baked backup manifest at /public/demo-story.json. Its scenes
@@ -134,7 +138,7 @@ function PresentationContent() {
   // the <Suspense> boundary added around this component in PresentationPage below.
   const demo = useSearchParams().has("demo");
 
-  const [status, setStatus] = useState<"loading" | "generating" | "done" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "generating" | "done" | "error" | "blocked">("loading");
   const [error, setError] = useState<string | null>(null);
   const [scenesData, setScenesData] = useState<ScenesData | null>(null);
   // True once live generation failed and we fell back to the pre-baked backup
@@ -204,6 +208,18 @@ function PresentationContent() {
 
         const data: ScenesData = await scenesRes.json();
         if (cancelled) return;
+
+        // Content-safety guardrail: the story was withheld as too intense for
+        // young readers. Show a friendly notice instead of generating anything.
+        if (data.blocked) {
+          setError(
+            data.block_reason ||
+              "This story isn't quite right for young readers. Try a gentler one!"
+          );
+          setStatus("blocked");
+          return;
+        }
+
         setScenesData(data);
         setStatus("generating");
 
@@ -426,6 +442,38 @@ function PresentationContent() {
         >
           Go back and enter a story
         </Link>
+      </div>
+    );
+  }
+
+  if (status === "blocked") {
+    return (
+      <div className="text-center">
+        <p className="mb-2 text-lg font-bold" style={{ color: T.roseDark }}>
+          Let&apos;s pick a gentler story
+        </p>
+        <p className="mb-4 font-medium" style={{ color: T.muted }}>
+          {error}
+        </p>
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={showBackup}
+            className="rounded-full px-5 py-2.5 font-bold text-white transition-transform hover:scale-[1.03]"
+            style={{
+              background: T.rose,
+              boxShadow: `0 4px 0 ${T.roseDark}`,
+            }}
+          >
+            Show a safe sample story
+          </button>
+          <Link
+            href="/"
+            className="font-semibold underline-offset-2 hover:underline"
+            style={{ color: T.muted }}
+          >
+            Choose a different story
+          </Link>
+        </div>
       </div>
     );
   }
