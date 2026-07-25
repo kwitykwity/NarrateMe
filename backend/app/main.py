@@ -37,7 +37,7 @@ cors_origins = [
     if o.strip()
 ]
 cors_origin_regex = os.getenv(
-    "CORS_ORIGIN_REGEX", r"https://narrateme-[a-z0-9-]+\.vercel\.app"
+    "CORS_ORIGIN_REGEX", r"https://narrate[a-z0-9-]*\.vercel\.app"
 )
 
 app.add_middleware(
