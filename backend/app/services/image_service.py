@@ -12,7 +12,9 @@ logger = logging.getLogger(__name__)
 # gpt-image-2 accepts quality: low | medium | high | auto
 #                    and size: 1024x1024 | 1024x1536 | 1536x1024 | auto
 IMAGE_QUALITY = os.getenv("IMAGE_QUALITY", "medium")
-IMAGE_SIZE = os.getenv("IMAGE_SIZE", "1024x1024")
+# 1536x1024 (3:2 landscape) is the default so images match the presentation's
+# 3:2 scene frame edge-to-edge; override for square/portrait via env.
+IMAGE_SIZE = os.getenv("IMAGE_SIZE", "1536x1024")
 
 
 def get_client():
