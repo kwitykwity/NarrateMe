@@ -1,26 +1,57 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-ink-dark: #1C2B4A;
+  --color-surface-base: #FFFDF7;
+  --color-surface-raised: #FFFBF0;
+  --color-surface-elevated: #FFF9E6;
+  --color-border-fine: #EADCC9;
+  --color-accent-teal: #1A9B8C;
+  --color-accent-teal-soft: #D9F3EE;
+  --color-accent-coral: #F97B5C;
+  --color-accent-yellow: #F5A623;
+  --font-sans: 'Nunito', sans-serif;
+  --radius-jumbo: 2rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.5); }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.animate-pulseDot {
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+.word-punchout {
+  color: #1A9B8C;
+  display: inline;
+}
+
+.nav-link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s ease;
+}
+
+.nav-link-underline:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Nunito', sans-serif;
+  background-color: var(--color-surface-base, #FFFDF7);
+  color: var(--color-ink-dark, #1C2B4A);
 }

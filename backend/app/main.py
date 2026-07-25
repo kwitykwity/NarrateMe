@@ -17,6 +17,9 @@ from app.api.scenes import router as scenes_router
 from app.api.images import router as images_router
 from app.api.audio import router as audio_router
 from app.api.owl import router as owl_router
+from app.api.demo import router as demo_router
+from app.api.subscribe import router as subscribe_router
+from app.api.stats import router as stats_router
 
 app = FastAPI(
     title="NarrateMe API",
@@ -44,6 +47,9 @@ app.include_router(scenes_router)
 app.include_router(images_router)
 app.include_router(audio_router)
 app.include_router(owl_router)
+app.include_router(demo_router)
+app.include_router(subscribe_router)
+app.include_router(stats_router)
 
 
 @app.get("/health")
