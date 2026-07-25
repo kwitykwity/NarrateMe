@@ -157,6 +157,11 @@ function PresentationContent() {
   // play/pause/ended events; toggles the owl's "talking" animation.
   const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // The <audio> element is keyed by scene, so React mounts a fresh one each
+  // scene which would otherwise reset to full volume. Remember the reader's
+  // chosen volume/mute and reapply it to each new element.
+  const volumeRef = useRef(1);
+  const mutedRef = useRef(false);
 
   useEffect(() => {
     if (!story && !demo) return;
@@ -372,6 +377,16 @@ function PresentationContent() {
       el.play().catch(() => {});
     }
   }, [autoAdvance, currentScene, currentAudioUrl]);
+
+  // Reapply the remembered volume/mute to the freshly-mounted audio element so
+  // the reader's setting carries across scenes instead of resetting to full.
+  useEffect(() => {
+    const el = audioRef.current;
+    if (el) {
+      el.volume = volumeRef.current;
+      el.muted = mutedRef.current;
+    }
+  }, [currentScene, currentAudioUrl]);
 
   // Move to another scene, clearing the word highlight; the new scene's audio
   // element remounts at time 0 and its timeupdate events drive it again.
@@ -675,6 +690,10 @@ function PresentationContent() {
                   onEnded={handleAudioEnded}
                   onPlay={() => setIsSpeaking(true)}
                   onPause={() => setIsSpeaking(false)}
+                  onVolumeChange={(e) => {
+                    volumeRef.current = e.currentTarget.volume;
+                    mutedRef.current = e.currentTarget.muted;
+                  }}
                   className="w-full"
                 >
                   Your browser does not support audio playback.
