@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Fragment, useState, useEffect, useRef, useSyncExternalStore } from "react";
+import { useSearchParams } from "next/navigation";
+import { Fragment, Suspense, useState, useEffect, useRef, useSyncExternalStore } from "react";
 import { PageDoodles } from "../components/PageDoodles";
 import { T } from "../lib/design";
 import OwlAvatar from "./OwlAvatar";
@@ -126,11 +127,12 @@ function PresentationContent() {
   const hydrated = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const story = hydrated ? sessionStorage.getItem("narrateme:story") : null;
   // Demo mode (?demo=1): show the pre-generated story immediately, skipping all
-  // live generation. Read from the URL client-side (same hydration guard as the
-  // story) to avoid needing a Suspense boundary for useSearchParams.
-  const demo = hydrated
-    ? new URLSearchParams(window.location.search).has("demo")
-    : false;
+  // live generation. Read via useSearchParams (not window.location.search) so it
+  // reacts to client-side navigation from the home page. Reading the URL during
+  // render didn't re-run on the router.push into /presentation?demo=1, leaving
+  // demo=false and showing the "No story provided" screen. useSearchParams needs
+  // the <Suspense> boundary added around this component in PresentationPage below.
+  const demo = useSearchParams().has("demo");
 
   const [status, setStatus] = useState<"loading" | "generating" | "done" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
@@ -776,6 +778,33 @@ function PresentationContent() {
   );
 }
 
+// Suspense fallback for PresentationContent. useSearchParams suspends the
+// component up to the nearest boundary while the query string resolves, so this
+// mirrors the in-component "loading" card to keep the transition seamless.
+function PresentationFallback() {
+  return (
+    <div className="w-full max-w-xl">
+      <div
+        className="flex items-center justify-center gap-3 p-12"
+        style={{
+          background: T.white,
+          borderRadius: "1.5rem",
+          border: `2px solid ${T.rose}30`,
+          boxShadow: `0 6px 0 ${T.roseDark}22`,
+        }}
+      >
+        <div
+          className="h-5 w-5 animate-spin rounded-full border-2 border-t-transparent"
+          style={{ borderColor: T.rose, borderTopColor: "transparent" }}
+        />
+        <p className="font-semibold" style={{ color: T.muted }}>
+          Reading your story…
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function PresentationPage() {
   return (
     <div
@@ -799,7 +828,9 @@ export default function PresentationPage() {
       </div>
 
       <div className="relative z-10 w-full flex justify-center">
-        <PresentationContent />
+        <Suspense fallback={<PresentationFallback />}>
+          <PresentationContent />
+        </Suspense>
       </div>
     </div>
   );
