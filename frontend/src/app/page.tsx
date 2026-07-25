@@ -22,13 +22,26 @@ const MIN_CHARS = 50;
 export default function Home() {
   const [story, setStory] = useState("");
   const [focused, setFocused] = useState(false);
+  // Demo mode: presenter toggle. When on, the normal "make my story" flow loads
+  // the pre-generated story instantly instead of running live generation — so a
+  // demo goes through the real UX but never waits or fails.
+  const [demoMode, setDemoMode] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
 
   const isValid = story.trim().length >= MIN_CHARS;
+  // In demo mode the story text is ignored (we play the pre-gen), so the submit
+  // button is always enabled.
+  const canSubmit = demoMode || isValid;
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
+    // Demo mode: skip validation and live generation, jump straight to the
+    // pre-generated story so a full presentation is on screen instantly.
+    if (demoMode) {
+      router.push("/presentation?demo=1");
+      return;
+    }
     if (!isValid) {
       ref.current?.focus();
       return;
@@ -43,6 +56,28 @@ export default function Home() {
       style={{ background: T.bg, fontFamily: "var(--font-nunito), sans-serif" }}
     >
       <PageDoodles />
+
+      {/* Demo mode toggle — a quiet presenter-only control. When armed, the
+          normal "make my story" flow loads the pre-generated story instantly
+          instead of generating live. Deliberately understated: the label never
+          changes and there's no on-screen indication elsewhere, so the audience
+          sees the ordinary app. Only the subtle fill tells the presenter it's on. */}
+      <button
+        type="button"
+        onClick={() => setDemoMode((d) => !d)}
+        aria-pressed={demoMode}
+        title="Demo mode"
+        className="fixed left-4 top-4 z-50 rounded-full px-4 py-2 text-sm font-bold transition-transform hover:scale-[1.04]"
+        style={{
+          fontFamily: "var(--font-baloo), cursive",
+          background: demoMode ? T.rose : T.white,
+          color: demoMode ? T.white : T.roseDark,
+          border: `2px solid ${T.rose}`,
+          boxShadow: demoMode ? `0 3px 0 ${T.roseDark}` : `0 3px 0 ${T.rose}55`,
+        }}
+      >
+        Demo mode
+      </button>
 
       <motion.main
         className="relative z-10 flex w-full max-w-xl flex-col gap-5"
@@ -197,22 +232,22 @@ export default function Home() {
 
             <motion.button
               type="submit"
-              disabled={!isValid}
+              disabled={!canSubmit}
               className="w-full px-8 py-4 text-xl font-bold"
               style={{
                 fontFamily: "var(--font-baloo), cursive",
                 borderRadius: "999px",
-                background: isValid ? T.rose : "#D0C8E8",
-                boxShadow: isValid
+                background: canSubmit ? T.rose : "#D0C8E8",
+                boxShadow: canSubmit
                   ? `0 5px 0 ${T.roseDark}, 0 8px 24px ${T.rose}44`
                   : "none",
-                cursor: isValid ? "pointer" : "not-allowed",
+                cursor: canSubmit ? "pointer" : "not-allowed",
                 border: "none",
-                color: isValid ? T.white : "#A0A8D0",
+                color: canSubmit ? T.white : "#A0A8D0",
               }}
-              whileHover={isValid ? { scale: 1.025, y: -2 } : {}}
+              whileHover={canSubmit ? { scale: 1.025, y: -2 } : {}}
               whileTap={
-                isValid
+                canSubmit
                   ? {
                       scale: 0.97,
                       y: 3,
