@@ -599,7 +599,7 @@ function PresentationContent() {
         )}
 
         {/* Image */}
-        <div className="relative aspect-video bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+        <div className="relative aspect-square bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
           {scene.image_url ? (
             <Image
               src={scene.image_url}
