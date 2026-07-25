@@ -125,12 +125,19 @@ function PresentationContent() {
   // false during SSR and the first hydration render, true once on the client.
   const hydrated = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const story = hydrated ? sessionStorage.getItem("narrateme:story") : null;
+  // Demo mode (?demo=1): show the pre-generated story immediately, skipping all
+  // live generation. Read from the URL client-side (same hydration guard as the
+  // story) to avoid needing a Suspense boundary for useSearchParams.
+  const demo = hydrated
+    ? new URLSearchParams(window.location.search).has("demo")
+    : false;
 
   const [status, setStatus] = useState<"loading" | "generating" | "done" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
   const [scenesData, setScenesData] = useState<ScenesData | null>(null);
-  // True once we've fallen back to the pre-baked backup story instead of live
-  // generation, so the UI can flag it.
+  // True once live generation failed and we fell back to the pre-baked backup
+  // story. Surfaces the fallback notice — but only in live mode, never in the
+  // intentional demo (the demo path never sets this).
   const [isBackup, setIsBackup] = useState(false);
   const [currentScene, setCurrentScene] = useState(0);
   // When true, each scene's narration plays automatically and advances to the
@@ -150,12 +157,30 @@ function PresentationContent() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    if (!story) return;
+    if (!story && !demo) return;
 
     const controller = new AbortController();
     let cancelled = false;
 
     async function generatePresentation() {
+      // Demo mode: skip live generation entirely and load the pre-generated
+      // story immediately, so a full presentation is on screen with no wait.
+      if (demo) {
+        try {
+          setStatus("loading");
+          const backup = await loadBackupStory(controller.signal);
+          if (cancelled) return;
+          setScenesData(backup);
+          setStatus("done");
+        } catch (err) {
+          if (cancelled) return;
+          if (err instanceof DOMException && err.name === "AbortError") return;
+          setError("Couldn't load the demo story");
+          setStatus("error");
+        }
+        return;
+      }
+
       try {
         // Step 1: Split story into scenes
         setStatus("loading");
@@ -331,7 +356,7 @@ function PresentationContent() {
       cancelled = true;
       controller.abort();
     };
-  }, [story]);
+  }, [story, demo]);
 
   // Drive the read-along: when auto-advance is on and the current scene's
   // narration is ready, play it. Changing scene (or a newly-arrived audio URL)
@@ -371,7 +396,7 @@ function PresentationContent() {
     }
   };
 
-  if (hydrated && !story) {
+  if (hydrated && !story && !demo) {
     return (
       <div className="text-center">
         <p className="mb-4 font-medium" style={{ color: T.muted }}>
@@ -510,7 +535,11 @@ function PresentationContent() {
 
   return (
     <div className="w-full max-w-4xl">
-      {isBackup && (
+      {/* Fallback notice — shown only for LIVE generation that had to fall back
+          to the backup story. Never shown in demo mode (the demo never sets
+          isBackup, and the !demo guard makes that explicit), so a demo stays
+          silent while real usage still gets honest feedback. */}
+      {isBackup && !demo && (
         <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-400">
           Live generation was unavailable — showing a pre-loaded backup story.
         </div>
