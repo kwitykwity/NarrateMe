@@ -53,3 +53,61 @@ body {
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Marketing landing page (/landing) design tokens + helpers.
+   Salvaged from the closed "Marketing" PR (#3). Scoped by unique names so they
+   don't affect the existing app; the landing components reference these Tailwind
+   color/radius tokens (e.g. bg-surface-base, text-ink-dark, rounded-jumbo).
+   --------------------------------------------------------------------------- */
+@theme {
+  --color-ink-dark: #1c2b4a;
+  --color-surface-base: #fffdf7;
+  --color-surface-raised: #fffbf0;
+  --color-surface-elevated: #fff9e6;
+  --color-border-fine: #eadcc9;
+  --color-accent-teal: #1a9b8c;
+  --color-accent-teal-soft: #d9f3ee;
+  --color-accent-coral: #f97b5c;
+  --color-accent-yellow: #f5a623;
+  --radius-jumbo: 2rem;
+}
+
+@keyframes pulseDot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.5);
+  }
+}
+
+.animate-pulseDot {
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+.word-punchout {
+  color: #1a9b8c;
+  display: inline;
+}
+
+.nav-link-underline::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s ease;
+}
+
+.nav-link-underline:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
