@@ -30,6 +30,21 @@ The audience is children in grades 1-3. Many classic stories (e.g. Aesop's fable
 - Keep the moral and the shape of the story intact — adapt wording, don't invent a different story.
 - BLOCK truly unsuitable input: if a story is fundamentally inappropriate for young children (graphic or gory violence, cruelty or torture, sexual content, hate, or self-harm) and cannot be faithfully softened while staying true to it, do NOT produce scenes. Instead return the blocked response below.
 
+ENGAGEMENT PROMPTS (for active listening):
+To help children become active listeners rather than passive ones, add engagement prompts to 2-3 scenes (NOT the first or last scene). Choose from these types:
+
+1. "sound_cue" (timing: "before") - Tell the child to do something when they hear a word/event
+   - Examples: "Clap when you hear the dog bark!", "Wave when Max gets home!"
+   - The action must reference something that actually appears in that scene's text
+
+2. "reading_prompt" (timing: "after") - Encourage prediction or thinking
+   - Ask "What do you think happens next?" or similar prediction questions
+   - Best placed mid-story where there's natural suspense
+
+3. "comprehension_check" (timing: "after") - Verify understanding with a simple question
+   - Examples: "Who found Max?", "What color was the puppy?"
+   - Include an "answer_hint" field with the answer for the grown-up
+
 You must respond with valid JSON in ONE of these two formats.
 
 If the story is usable (after softening if needed):
@@ -39,8 +54,48 @@ If the story is usable (after softening if needed):
   "scenes": [
     {
       "scene_number": 1,
-      "text": "The (age-appropriately adapted) story text for this scene.",
-      "image_prompt": "A detailed, child-friendly image prompt for DALL-E 3 to illustrate this scene. Include the character description details for consistency.",
+      "text": "The story text for this scene.",
+      "image_prompt": "A detailed, child-friendly image prompt for DALL-E 3.",
+      "emotion": "happy"
+    },
+    {
+      "scene_number": 2,
+      "text": "Max barked loudly at the butterflies...",
+      "image_prompt": "...",
+      "emotion": "excited",
+      "engagement": {
+        "type": "sound_cue",
+        "timing": "before",
+        "text": "Clap your hands when Max barks!"
+      }
+    },
+    {
+      "scene_number": 3,
+      "text": "...",
+      "image_prompt": "...",
+      "emotion": "calm",
+      "engagement": {
+        "type": "reading_prompt",
+        "timing": "after",
+        "text": "What do you think happens next?"
+      }
+    },
+    {
+      "scene_number": 4,
+      "text": "Lily helped Max find his way home...",
+      "image_prompt": "...",
+      "emotion": "happy",
+      "engagement": {
+        "type": "comprehension_check",
+        "timing": "after",
+        "text": "Who helped Max find his way?",
+        "answer_hint": "Lily, the kind girl"
+      }
+    },
+    {
+      "scene_number": 5,
+      "text": "...",
+      "image_prompt": "...",
       "emotion": "happy"
     }
   ]
@@ -62,7 +117,8 @@ Guidelines (for the non-blocked case):
 - Image prompts should be child-friendly, colorful, and suitable for a storybook, and must also respect the content-safety rule (never depict violence, gore, or scary imagery)
 - Image prompts should always reference the character's consistent appearance
 - Use a warm, friendly illustration style (e.g., "children's book illustration style, warm colors, friendly")
-- Tag each scene with an "emotion" that captures its dominant emotional tone. You MUST pick exactly one of: "happy", "sad", "excited", "scared", "calm". This drives a narrator owl's facial expression, so choose the tone a child would feel during that scene."""
+- Tag each scene with an "emotion" that captures its dominant emotional tone. You MUST pick exactly one of: "happy", "sad", "excited", "scared", "calm". This drives a narrator owl's facial expression, so choose the tone a child would feel during that scene.
+- Add engagement prompts to 2-3 middle scenes (scenes 2, 3, or 4). Do NOT add prompts to scene 1 or scene 5."""
 
 
 async def split_story_into_scenes(story: str, timeout_seconds: int = 60) -> SceneResponse:

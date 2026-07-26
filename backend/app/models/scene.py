@@ -1,3 +1,4 @@
+from typing import Literal, Optional
 from pydantic import BaseModel, field_validator
 
 # The emotion vocabulary the LLM is allowed to tag scenes with. This is the
@@ -6,9 +7,37 @@ from pydantic import BaseModel, field_validator
 VALID_EMOTIONS = {"happy", "sad", "excited", "scared", "calm"}
 DEFAULT_EMOTION = "calm"
 
+# Engagement prompt types for active listening features
+VALID_ENGAGEMENT_TYPES = {"reading_prompt", "sound_cue", "comprehension_check"}
+VALID_TIMINGS = {"before", "after"}
+
 
 class StoryRequest(BaseModel):
     story: str
+
+
+class EngagementPrompt(BaseModel):
+    """An optional engagement prompt to make children active listeners."""
+    type: str  # reading_prompt, sound_cue, or comprehension_check
+    text: str  # The prompt/question text
+    timing: str  # "before" or "after" the scene
+    answer_hint: Optional[str] = None  # For comprehension_check only
+
+    @field_validator("type", mode="before")
+    @classmethod
+    def normalize_type(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return "reading_prompt"
+        normalized = value.strip().lower()
+        return normalized if normalized in VALID_ENGAGEMENT_TYPES else "reading_prompt"
+
+    @field_validator("timing", mode="before")
+    @classmethod
+    def normalize_timing(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return "after"
+        normalized = value.strip().lower()
+        return normalized if normalized in VALID_TIMINGS else "after"
 
 
 class Scene(BaseModel):
@@ -16,6 +45,7 @@ class Scene(BaseModel):
     text: str
     image_prompt: str
     emotion: str = DEFAULT_EMOTION
+    engagement: Optional[EngagementPrompt] = None
 
     @field_validator("emotion", mode="before")
     @classmethod

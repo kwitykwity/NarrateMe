@@ -136,6 +136,11 @@
       "emotion": "calm",
       "image_url": "/demo/scene-2.png",
       "audio_url": "/demo/scene-2.mp3",
+      "engagement": {
+        "type": "reading_prompt",
+        "timing": "after",
+        "text": "What do you think Lily will do to help Max?"
+      },
       "word_timings": [
         {
           "word": "A",
@@ -200,6 +205,12 @@
       "emotion": "calm",
       "image_url": "/demo/scene-3.png",
       "audio_url": "/demo/scene-3.mp3",
+      "engagement": {
+        "type": "comprehension_check",
+        "timing": "after",
+        "text": "Who helped Max find his way home?",
+        "answer_hint": "Lily, the kind girl"
+      },
       "word_timings": [
         {
           "word": "She",

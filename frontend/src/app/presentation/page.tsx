@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Fragment, useState, useEffect, useRef, useSyncExternalStore } from "react";
 import OwlAvatar from "./OwlAvatar";
+import EngagementModal from "./EngagementModal";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -36,6 +37,14 @@ interface WordTiming {
   end: number;
 }
 
+// Engagement prompt to make children active listeners
+interface EngagementPrompt {
+  type: "reading_prompt" | "sound_cue" | "comprehension_check";
+  text: string;
+  timing: "before" | "after";
+  answer_hint?: string;
+}
+
 interface Scene {
   scene_number: number;
   text: string;
@@ -50,6 +59,8 @@ interface Scene {
   // Dominant tone tagged for this scene (happy/sad/excited/scared/calm), used to
   // pick the owl narrator's expression. Falls back to a default owl if absent.
   emotion?: string;
+  // Optional engagement prompt for active listening
+  engagement?: EngagementPrompt;
 }
 
 // Max requests in flight at once, per resource. High concurrency inflates the
@@ -145,6 +156,9 @@ function PresentationContent() {
   // chosen volume/mute and reapply it to each new element.
   const volumeRef = useRef(1);
   const mutedRef = useRef(false);
+  // Engagement prompt state - shows modal for active listening prompts
+  const [showingPrompt, setShowingPrompt] = useState(false);
+  const [pendingAdvance, setPendingAdvance] = useState(false);
 
   useEffect(() => {
     if (!story) return;
@@ -446,10 +460,22 @@ function PresentationContent() {
   };
 
   // When a scene's narration finishes, clear the highlight; during read-along
-  // also advance to the next scene (its audio auto-plays via the effect), or
-  // stop on the last scene.
+  // When a scene's narration finishes, check for "after" engagement prompts.
+  // If there's a prompt, show it and defer auto-advance until dismissed.
+  // Otherwise, advance to the next scene or stop on the last scene.
   const handleAudioEnded = () => {
     setCurrentWordIndex(-1);
+
+    // Check for "after" engagement prompt
+    const engagement = scene?.engagement;
+    if (engagement?.timing === "after") {
+      setShowingPrompt(true);
+      if (autoAdvance) {
+        setPendingAdvance(true);
+      }
+      return;
+    }
+
     if (!autoAdvance) return;
     if (currentScene < totalScenes - 1) {
       setCurrentScene((c) => c + 1);
@@ -474,6 +500,29 @@ function PresentationContent() {
     }
     setCurrentWordIndex(idx);
   };
+
+  // Handle dismissing an engagement prompt. If we were in auto-advance mode,
+  // continue to the next scene after the prompt is dismissed.
+  const handlePromptDismiss = () => {
+    setShowingPrompt(false);
+    if (pendingAdvance) {
+      setPendingAdvance(false);
+      if (currentScene < totalScenes - 1) {
+        setCurrentScene((c) => c + 1);
+      } else {
+        setAutoAdvance(false);
+      }
+    }
+  };
+
+  // Check for "before" engagement prompts when scene changes
+  useEffect(() => {
+    if (!scenesData) return;
+    const engagement = scenesData.scenes[currentScene]?.engagement;
+    if (engagement?.timing === "before" && !showingPrompt) {
+      setShowingPrompt(true);
+    }
+  }, [currentScene, scenesData]);
 
   return (
     <div className="w-full max-w-4xl">
@@ -665,6 +714,14 @@ function PresentationContent() {
           Start over with a new story
         </Link>
       </div>
+
+      {/* Engagement Prompt Modal */}
+      {showingPrompt && scene?.engagement && (
+        <EngagementModal
+          prompt={scene.engagement}
+          onDismiss={handlePromptDismiss}
+        />
+      )}
     </div>
   );
 }
