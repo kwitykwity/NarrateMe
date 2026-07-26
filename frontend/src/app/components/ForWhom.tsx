@@ -47,7 +47,7 @@ export default function ForWhom({ onStartStoryClick }: ForWhomProps) {
               For Parents
             </h3>
             <p className="text-lg text-gray-700 mb-6 leading-relaxed">
-              Make bedtime magical. Turn your child&apos;s favorite ideas into narrated, illustrated adventures they&apos;ll love to revisit.
+              Make bedtime magical. Turn your child's favorite ideas into narrated, illustrated adventures they'll love to revisit.
             </p>
             <button
               onClick={onStartStoryClick}

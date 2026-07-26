@@ -36,7 +36,7 @@ export default function Footer() {
         setStatus("error");
         setMessage(data.detail || "Subscription failed. Please try again.");
       }
-    } catch {
+    } catch (err) {
       setStatus("error");
       setMessage("Network error. Please try again later.");
     }

@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        window.FontAwesomeConfig = {
+          autoReplaceSvg: 'nest'
+        };
+      </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Story Selection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ink-dark': '#1C2B4A',
+                        'surface-base': '#FFFDF7',
+                        'surface-raised': '#FFFBF0',
+                        'surface-elevated': '#FFF9E6',
+                        'border-fine': '#EADCC9',
+                        'accent-teal': '#1A9B8C',
+                        'accent-teal-soft': '#D9F3EE',
+                        'accent-coral': '#F97B5C',
+                        'accent-yellow': '#F5A623',
+                    },
+                    fontFamily: { sans: ['Nunito', 'sans-serif'] },
+                    borderRadius: { 'jumbo': '2rem' },
+                    keyframes: {
+                        fadeUp: { from: { opacity: '0', transform: 'translateY(20px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+                        float: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-6px)' } },
+                    },
+                    animation: {
+                        fadeUp: 'fadeUp 0.4s ease-out forwards',
+                        float: 'float 3s ease-in-out infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Nunito', sans-serif; background: #FFFDF7; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+        .story-card {
+            transition: all 0.25s cubic-bezier(0.34, 1.2, 0.64, 1);
+            cursor: pointer;
+        }
+        .story-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 48px rgba(26,155,140,0.12);
+        }
+        .story-card.selected {
+            border-color: #1A9B8C !important;
+            box-shadow: 0 0 0 4px rgba(26,155,140,0.18);
+        }
+        .story-card.selected .select-btn {
+            background: #1A9B8C;
+            color: white;
+        }
+        .filter-btn.active {
+            background: #1A9B8C;
+            color: white;
+            border-color: #1A9B8C;
+        }
+        .badge { font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 99px; }
+        .badge-grade1 { background: #D9F3EE; color: #1A9B8C; }
+        .badge-grade2 { background: #FFF4E0; color: #D97706; }
+        .badge-grade3 { background: #FEE2E2; color: #EF4444; }
+        .badge-new { background: #F5A623; color: white; }
+        .search-box:focus { outline: none; box-shadow: 0 0 0 3px rgba(26,155,140,0.2); border-color: #1A9B8C; }
+
+        .story-preview-panel {
+            position: sticky;
+            top: 80px;
+        }
+    </style>
+</head>
+<body class="bg-surface-base text-ink-dark min-h-screen">
+
+    <!-- Nav -->
+    <header id="header" class="sticky top-0 z-50 bg-surface-base/95 backdrop-blur-sm border-b border-border-fine px-6 py-3 flex items-center justify-between">
+        <a href="#" class="flex items-center space-x-2 text-xl font-extrabold">
+            <i class="fa-solid fa-book-open-reader text-accent-teal mr-1"></i>
+            <span>Narrate<span class="text-accent-yellow">Me</span></span>
+        </a>
+        <div class="flex items-center space-x-1">
+            <div class="w-8 h-2 rounded-full bg-accent-teal"></div>
+            <div class="w-8 h-2 rounded-full bg-border-fine"></div>
+            <div class="w-8 h-2 rounded-full bg-border-fine"></div>
+        </div>
+        <a href="#" class="text-sm text-gray-500 hover:text-accent-teal font-semibold transition">
+            <i class="fa-solid fa-arrow-left mr-1"></i> Back to Input
+        </a>
+    </header>
+
+    <!-- Hero Banner -->
+    <section id="demo-hero" class="bg-gradient-to-br from-ink-dark to-teal-900 py-10 px-6 text-center relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute top-4 left-10 text-5xl" style="animation: float 2.8s ease-in-out infinite;">📖</div>
+            <div class="absolute top-8 right-16 text-4xl" style="animation: float 3.2s ease-in-out 0.5s infinite;">⭐</div>
+            <div class="absolute bottom-4 left-20 text-3xl" style="animation: float 3s ease-in-out 1s infinite;">✨</div>
+            <div class="absolute bottom-6 right-24 text-4xl" style="animation: float 2.6s ease-in-out 0.3s infinite;">🌟</div>
+        </div>
+        <div class="relative z-10">
+            <div class="inline-flex items-center space-x-2 bg-white/10 text-white px-4 py-1.5 rounded-full text-xs font-bold mb-4 border border-white/20">
+                <i class="fa-solid fa-star text-accent-yellow"></i>
+                <span>Demo Story Library</span>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-white mb-2">Pick a Demo Story</h1>
+            <p class="text-white/60 text-base max-w-lg mx-auto">No time to write? Choose one of our pre-made stories and see NarrateMe in action instantly!</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="flex flex-col lg:flex-row gap-8">
+
+            <!-- LEFT: Filter + Grid -->
+            <div class="flex-1">
+
+                <!-- Search + Filters -->
+                <div class="flex flex-col sm:flex-row gap-3 mb-6">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-300"></i>
+                        <input type="text" class="search-box w-full bg-white border-2 border-border-fine rounded-2xl pl-10 pr-4 py-3 text-sm font-semibold placeholder-gray-300 transition" placeholder="Search stories…" oninput="filterStories(this.value)">
+                    </div>
+                </div>
+
+                <!-- Filter pills -->
+                <div class="flex flex-wrap gap-2 mb-6">
+                    <button class="filter-btn active px-4 py-2 rounded-full border-2 border-accent-teal text-sm font-bold transition-all" onclick="setFilter('all', this)">All Stories</button>
+                    <button class="filter-btn px-4 py-2 rounded-full border-2 border-border-fine text-sm font-bold text-gray-500 transition-all" onclick="setFilter('grade1', this)">Grade 1</button>
+                    <button class="filter-btn px-4 py-2 rounded-full border-2 border-border-fine text-sm font-bold text-gray-500 transition-all" onclick="setFilter('grade2', this)">Grade 2</button>
+                    <button class="filter-btn px-4 py-2 rounded-full border-2 border-border-fine text-sm font-bold text-gray-500 transition-all" onclick="setFilter('grade3', this)">Grade 3</button>
+                    <button class="filter-btn px-4 py-2 rounded-full border-2 border-border-fine text-sm font-bold text-gray-500 transition-all" onclick="setFilter('adventure', this)">🗺️ Adventure</button>
+                    <button class="filter-btn px-4 py-2 rounded-full border-2 border-border-fine text-sm font-bold text-gray-500 transition-all" onclick="setFilter('nature', this)">🌿 Nature</button>
+                    <button class="filter-btn px-4 py-2 rounded-full border-2 border-border-fine text-sm font-bold text-gray-500 transition-all" onclick="setFilter('fantasy', this)">🧙 Fantasy</button>
+                    <button class="filter-btn px-4 py-2 rounded-full border-2 border-border-fine text-sm font-bold text-gray-500 transition-all" onclick="setFilter('space', this)">🚀 Space</button>
+                </div>
+
+                <!-- Results count -->
+                <div class="flex items-center justify-between mb-4">
+                    <p class="text-sm text-gray-400 font-semibold" id="results-count">Showing 9 stories</p>
+                    <div class="flex items-center space-x-2 text-sm text-gray-400">
+                        <span>Sort:</span>
+                        <select class="bg-transparent border border-border-fine rounded-lg px-2 py-1 text-sm font-semibold text-gray-500">
+                            <option>Popular</option>
+                            <option>Newest</option>
+                            <option>Grade 1 first</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Story Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5" id="story-grid">
+
+                    <!-- Card 1 -->
+                    <div class="story-card bg-white rounded-jumbo border-2 border-border-fine overflow-hidden" onclick="selectCard(this, 0)">
+                        <div class="relative overflow-hidden" style="height: 160px;">
+                            <img class="w-full h-full object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_82bcc81e17_ea5dab862e6bfc4f.png" alt="young bear cub finding a glowing golden acorn in an enchanted sunlit forest, warm fairy tale illustr" />
+                            <div class="absolute top-3 left-3 flex gap-1">
+                                <span class="badge badge-grade1">Grade 1</span>
+                                <span class="badge badge-new">⭐ Popular</span>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-1">
+                                <h3 class="font-extrabold text-ink-dark text-base leading-tight">Benny's Glowing Acorn</h3>
+                                <span class="text-lg ml-2 flex-shrink-0">🐻</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-3 font-medium">Adventure · 5 scenes · ~3 min</p>
+                            <p class="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4">A young bear discovers a magical glowing acorn that transforms the entire forest forever.</p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex text-accent-yellow text-xs space-x-0.5">
+                                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                </div>
+                                <button class="select-btn bg-accent-teal-soft text-accent-teal px-4 py-2 rounded-full text-xs font-extrabold hover:bg-accent-teal hover:text-white transition">
+                                    Use This →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="story-card bg-white rounded-jumbo border-2 border-border-fine overflow-hidden" onclick="selectCard(this, 1)">
+                        <div class="relative overflow-hidden" style="height: 160px;">
+                            <img class="w-full h-full object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_1b46bbb858_5c8aceb006c2e9d8.png" alt="little mermaid swimming with dolphins in a colorful ocean with coral reefs, bright children's book i" />
+                            <div class="absolute top-3 left-3 flex gap-1">
+                                <span class="badge badge-grade2">Grade 2</span>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-1">
+                                <h3 class="font-extrabold text-ink-dark text-base leading-tight">Luna and the Lost Wave</h3>
+                                <span class="text-lg ml-2 flex-shrink-0">🌊</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-3 font-medium">Ocean · 5 scenes · ~4 min</p>
+                            <p class="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4">A brave mermaid searches the deep ocean to rescue her favorite missing wave.</p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex text-accent-yellow text-xs space-x-0.5">
+                                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i>
+                                </div>
+                                <button class="select-btn bg-accent-teal-soft text-accent-teal px-4 py-2 rounded-full text-xs font-extrabold hover:bg-accent-teal hover:text-white transition">
+                                    Use This →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="story-card bg-white rounded-jumbo border-2 border-border-fine overflow-hidden" onclick="selectCard(this, 2)">
+                        <div class="relative overflow-hidden" style="height: 160px;">
+                            <img class="w-full h-full object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_479b9e5e55_7de22b3556e19f58.png" alt="young girl astronaut in a spacesuit tending a colorful flower garden on an alien planet, bright chee" />
+                            <div class="absolute top-3 left-3 flex gap-1">
+                                <span class="badge badge-grade2">Grade 2</span>
+                                <span class="badge badge-new" style="background:#1A9B8C;">✨ New</span>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-1">
+                                <h3 class="font-extrabold text-ink-dark text-base leading-tight">Zara's Space Garden</h3>
+                                <span class="text-lg ml-2 flex-shrink-0">🚀</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-3 font-medium">Space · 5 scenes · ~3 min</p>
+                            <p class="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4">The youngest astronaut in the galaxy plants the first flower on a grey, lonely planet.</p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex text-accent-yellow text-xs space-x-0.5">
+                                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                </div>
+                                <button class="select-btn bg-accent-teal-soft text-accent-teal px-4 py-2 rounded-full text-xs font-extrabold hover:bg-accent-teal hover:text-white transition">
+                                    Use This →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 4 -->
+                    <div class="story-card bg-white rounded-jumbo border-2 border-border-fine overflow-hidden" onclick="selectCard(this, 3)">
+                        <div class="relative overflow-hidden" style="height: 160px;">
+                            <img class="w-full h-full object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_ee8d872b98_0e7d8e38e2585fe4.png" alt="tiny friendly dragon breathing rainbow-colored fire over a colorful fairy tale village, whimsical ch" />
+                            <div class="absolute top-3 left-3 flex gap-1">
+                                <span class="badge badge-grade1">Grade 1</span>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-1">
+                                <h3 class="font-extrabold text-ink-dark text-base leading-tight">Spark the Kind Dragon</h3>
+                                <span class="text-lg ml-2 flex-shrink-0">🐉</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-3 font-medium">Fantasy · 4 scenes · ~3 min</p>
+                            <p class="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4">A tiny dragon who breathes rainbow fire learns that being different is a gift, not a curse.</p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex text-accent-yellow text-xs space-x-0.5">
+                                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i>
+                                </div>
+                                <button class="select-btn bg-accent-teal-soft text-accent-teal px-4 py-2 rounded-full text-xs font-extrabold hover:bg-accent-teal hover:text-white transition">
+                                    Use This →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 5 -->
+                    <div class="story-card bg-white rounded-jumbo border-2 border-border-fine overflow-hidden" onclick="selectCard(this, 4)">
+                        <div class="relative overflow-hidden" style="height: 160px;">
+                            <img class="w-full h-full object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_45665c1f4b_fa50a605383e5792.png" alt="cheerful little girl standing in heavy rain with a bright colorful umbrella, puddles and rainbow, wa" />
+                            <div class="absolute top-3 left-3">
+                                <span class="badge badge-grade1">Grade 1</span>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-1">
+                                <h3 class="font-extrabold text-ink-dark text-base leading-tight">Mia and the Rain</h3>
+                                <span class="text-lg ml-2 flex-shrink-0">🌧️</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-3 font-medium">Nature · 4 scenes · ~2 min</p>
+                            <p class="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4">A little girl discovers that rainy days can be the most magical adventures of all.</p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex text-accent-yellow text-xs space-x-0.5">
+                                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                </div>
+                                <button class="select-btn bg-accent-teal-soft text-accent-teal px-4 py-2 rounded-full text-xs font-extrabold hover:bg-accent-teal hover:text-white transition">
+                                    Use This →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 6 -->
+                    <div class="story-card bg-white rounded-jumbo border-2 border-border-fine overflow-hidden" onclick="selectCard(this, 5)">
+                        <div class="relative overflow-hidden" style="height: 160px;">
+                            <img class="w-full h-full object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_ac584e35e4_93c64f1adea2765d.png" alt="elderly tortoise and young hare racing through a colorful meadow with flowers, friendly competition," />
+                            <div class="absolute top-3 left-3">
+                                <span class="badge badge-grade3">Grade 3</span>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-1">
+                                <h3 class="font-extrabold text-ink-dark text-base leading-tight">The Kindest Race</h3>
+                                <span class="text-lg ml-2 flex-shrink-0">🐢</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-3 font-medium">Fable · 5 scenes · ~4 min</p>
+                            <p class="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4">A modern retelling of the tortoise and hare — where winning means helping each other finish.</p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex text-accent-yellow text-xs space-x-0.5">
+                                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i>
+                                </div>
+                                <button class="select-btn bg-accent-teal-soft text-accent-teal px-4 py-2 rounded-full text-xs font-extrabold hover:bg-accent-teal hover:text-white transition">
+                                    Use This →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 7 -->
+                    <div class="story-card bg-white rounded-jumbo border-2 border-border-fine overflow-hidden" onclick="selectCard(this, 6)">
+                        <div class="relative overflow-hidden" style="height: 160px;">
+                            <img class="w-full h-full object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_8d1ffebb05_82bb69106e701f5e.png" alt="magical library with floating books and a glowing lantern, small curious child exploring between tal" />
+                            <div class="absolute top-3 left-3">
+                                <span class="badge badge-grade3">Grade 3</span>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-1">
+                                <h3 class="font-extrabold text-ink-dark text-base leading-tight">The Midnight Library</h3>
+                                <span class="text-lg ml-2 flex-shrink-0">📚</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-3 font-medium">Mystery · 5 scenes · ~5 min</p>
+                            <p class="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4">A young reader sneaks into the school library at night and discovers books that come alive.</p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex text-accent-yellow text-xs space-x-0.5">
+                                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                </div>
+                                <button class="select-btn bg-accent-teal-soft text-accent-teal px-4 py-2 rounded-full text-xs font-extrabold hover:bg-accent-teal hover:text-white transition">
+                                    Use This →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 8 -->
+                    <div class="story-card bg-white rounded-jumbo border-2 border-border-fine overflow-hidden" onclick="selectCard(this, 7)">
+                        <div class="relative overflow-hidden" style="height: 160px;">
+                            <img class="w-full h-full object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_e98abf46f4_83430cfe38941dbd.png" alt="colorful butterfly emerging from cocoon in a garden, other insects watching in wonder, bright childr" />
+                            <div class="absolute top-3 left-3">
+                                <span class="badge badge-grade2">Grade 2</span>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-1">
+                                <h3 class="font-extrabold text-ink-dark text-base leading-tight">Bella Becomes</h3>
+                                <span class="text-lg ml-2 flex-shrink-0">🦋</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-3 font-medium">Nature · 4 scenes · ~3 min</p>
+                            <p class="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4">A caterpillar named Bella learns patience and bravery on her journey to becoming a butterfly.</p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex text-accent-yellow text-xs space-x-0.5">
+                                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i>
+                                </div>
+                                <button class="select-btn bg-accent-teal-soft text-accent-teal px-4 py-2 rounded-full text-xs font-extrabold hover:bg-accent-teal hover:text-white transition">
+                                    Use This →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 9 -->
+                    <div class="story-card bg-white rounded-jumbo border-2 border-border-fine overflow-hidden" onclick="selectCard(this, 8)">
+                        <div class="relative overflow-hidden" style="height: 160px;">
+                            <img class="w-full h-full object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_dc12d1dfcd_e80ce1cea9d4d375.png" alt="friendly robot learning to bake cookies in a warm kitchen with children helping, fun whimsical illus" />
+                            <div class="absolute top-3 left-3 flex gap-1">
+                                <span class="badge badge-grade2">Grade 2</span>
+                                <span class="badge badge-new" style="background:#F97B5C;">🔥 Hot</span>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-1">
+                                <h3 class="font-extrabold text-ink-dark text-base leading-tight">Rusty Learns to Bake</h3>
+                                <span class="text-lg ml-2 flex-shrink-0">🤖</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-3 font-medium">Fun · 5 scenes · ~4 min</p>
+                            <p class="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4">A little robot who has never tasted anything decides to bake cookies for the whole neighborhood.</p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex text-accent-yellow text-xs space-x-0.5">
+                                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                </div>
+                                <button class="select-btn bg-accent-teal-soft text-accent-teal px-4 py-2 rounded-full text-xs font-extrabold hover:bg-accent-teal hover:text-white transition">
+                                    Use This →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- RIGHT: Selected Story Preview Panel -->
+            <aside id="preview-panel" class="lg:w-72 flex-shrink-0">
+                <div class="story-preview-panel bg-white rounded-jumbo border border-border-fine shadow-sm p-6" id="preview-card">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Selected Story</p>
+
+                    <div id="no-selection" class="text-center py-10">
+                        <div style="animation: float 3s ease-in-out infinite; display: inline-block;">
+                            <i class="fa-solid fa-hand-pointer text-4xl text-border-fine mb-3" style="color: #EADCC9;"></i>
+                        </div>
+                        <p class="text-sm text-gray-300 font-semibold">Click a story card to preview it here</p>
+                    </div>
+
+                    <div id="selection-content" class="hidden">
+                        <div class="rounded-2xl overflow-hidden mb-4" style="height: 140px;">
+                            <img class="w-full h-full object-cover" id="preview-img" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_82bcc81e17_c6018b9224e0c72c.png" alt="young bear cub finding a glowing golden acorn in an enchanted sunlit forest" />
+                        </div>
+                        <h3 class="font-extrabold text-ink-dark text-lg mb-1" id="preview-title">Benny's Glowing Acorn</h3>
+                        <div class="flex items-center space-x-2 mb-3">
+                            <span class="badge badge-grade1" id="preview-grade">Grade 1</span>
+                            <span class="text-xs text-gray-400" id="preview-meta">Adventure · 5 scenes</span>
+                        </div>
+                        <p class="text-sm text-gray-500 leading-relaxed mb-5" id="preview-desc">A young bear discovers a magical glowing acorn that transforms the entire forest forever.</p>
+
+                        <!-- Story preview text -->
+                        <div class="bg-surface-base rounded-2xl p-4 border border-border-fine mb-5">
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Story Preview</p>
+                            <p class="text-xs text-gray-600 leading-relaxed" id="preview-text">"In a forest full of talking animals, a young bear named Benny found a mysterious glowing acorn under the oldest oak tree…"</p>
+                        </div>
+
+                        <button class="w-full bg-accent-teal text-white py-4 rounded-2xl font-extrabold text-base hover:bg-teal-600 transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Use This Story →</span>
+                        </button>
+                        <button class="w-full mt-2 bg-surface-base border border-border-fine text-gray-500 py-3 rounded-2xl text-sm font-semibold hover:border-accent-teal hover:text-accent-teal transition">
+                            <i class="fa-solid fa-eye mr-2"></i>Quick Preview
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Write your own CTA -->
+                <div class="mt-4 bg-gradient-to-br from-accent-yellow/20 to-amber-100 rounded-jumbo p-5 border border-accent-yellow/20">
+                    <p class="text-sm font-extrabold text-ink-dark mb-1">✏️ Have your own story?</p>
+                    <p class="text-xs text-gray-500 mb-3">Write or paste your own text and generate a custom story instead.</p>
+                    <a href="#" class="block text-center bg-ink-dark text-white py-2.5 rounded-2xl text-sm font-bold hover:bg-accent-teal transition">
+                        Write My Own →
+                    </a>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- Sticky Bottom CTA (mobile) -->
+    <div class="sticky bottom-0 lg:hidden bg-surface-base border-t border-border-fine px-4 py-3" id="mobile-cta">
+        <button class="w-full bg-accent-teal text-white py-4 rounded-2xl font-extrabold text-lg hover:bg-teal-600 transition" id="mobile-cta-btn" disabled style="opacity: 0.4;">
+            <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Use Selected Story →
+        </button>
+    </div>
+
+    <script>
+        let selectedCard = null;
+
+        function selectCard(card, idx) {
+            document.querySelectorAll('.story-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedCard = idx;
+
+            document.getElementById('no-selection').classList.add('hidden');
+            document.getElementById('selection-content').classList.remove('hidden');
+
+            // Enable mobile CTA
+            const mobileCta = document.getElementById('mobile-cta-btn');
+            mobileCta.disabled = false;
+            mobileCta.style.opacity = '1';
+        }
+
+        function setFilter(filter, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function filterStories(query) {
+            const cards = document.querySelectorAll('.story-card');
+            let visible = 0;
+            cards.forEach(c => {
+                const title = c.querySelector('h3').textContent.toLowerCase();
+                const desc = c.querySelector('p.text-sm').textContent.toLowerCase();
+                const match = !query || title.includes(query.toLowerCase()) || desc.includes(query.toLowerCase());
+                c.style.display = match ? '' : 'none';
+                if (match) visible++;
+            });
+            document.getElementById('results-count').textContent = 'Showing ' + visible + ' stories';
+        }
+    </script>
+</body>
+</html>

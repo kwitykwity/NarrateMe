@@ -9,10 +9,14 @@ logger = logging.getLogger(__name__)
 
 
 def get_client():
-    api_key = os.getenv("API_KEY")
+    api_key = (
+        os.getenv("API_KEY")
+        or os.getenv("ANTHROPIC_API_KEY")
+        or os.getenv("ANTHROPIC_API_KEY")
+    )
     if not api_key:
-        logger.error("API_KEY environment variable not set")
-        raise ValueError("API_KEY environment variable not set")
+        logger.error("Anthropic API key not configured (API_KEY or ANTHROPIC_API_KEY)")
+        raise ValueError("Anthropic API key not configured")
     logger.debug("Anthropic client initialized")
     return AsyncAnthropic(api_key=api_key)
 

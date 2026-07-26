@@ -28,11 +28,8 @@ export default function LandingPageStatus({ storyCount, subscriberCount }: Landi
 
         if (healthRes.ok) {
           const health = await healthRes.json();
-          const services: Record<string, { configured?: boolean }> =
-            health.ai_services ?? {};
-          const configured = Object.values(services).filter(
-            (service) => service?.configured
-          ).length;
+          const services = health.ai_services ?? {};
+          const configured = Object.values(services).filter((service: any) => service?.configured).length;
           setAiStatus(configured === 3 ? "ready" : "limited");
         }
       } catch {

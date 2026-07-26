@@ -55,10 +55,8 @@ export default function StoryGenerator({ sectionRef }: StoryGeneratorProps) {
 
       sessionStorage.setItem("narrateme:story", story.trim());
       window.location.href = "/presentation";
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to initiate presentation mode. Please try again.";
-      setErrorMessage(message);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Failed to initiate presentation mode. Please try again.");
       setIsLoading(false);
     }
   };

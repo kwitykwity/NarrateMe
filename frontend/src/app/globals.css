@@ -1,88 +1,22 @@
 @import "tailwindcss";
 
-:root {
-  --background: #fff8fa;
-  --foreground: #1a2744;
-  --nm-rose: #ff8fab;
-  --nm-rose-dark: #d96080;
-  --nm-sky: #72c8e8;
-  --nm-mint: #6dcf9f;
-  --nm-lav: #b09ee0;
-  --nm-muted: #6860a0;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-nunito);
-  --font-display: var(--font-baloo);
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-}
-
-/* Owl narrator "talking" bob — a gentle nod applied only while the current
-   scene's narration is actually playing (the audio element's play/pause/ended
-   events toggle the .owl-talking class). No new art or API cost; it just makes
-   the static owl feel like it's speaking along with the audio. */
-@keyframes owl-talk {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  25% {
-    transform: translateY(-6%) rotate(-2deg);
-  }
-  50% {
-    transform: translateY(0) rotate(0deg);
-  }
-  75% {
-    transform: translateY(-6%) rotate(2deg);
-  }
-}
-
-.owl-talking {
-  animation: owl-talk 0.6s ease-in-out infinite;
-}
-
-/* Respect readers who prefer less motion: hold the owl still. */
-@media (prefers-reduced-motion: reduce) {
-  .owl-talking {
-    animation: none;
-  }
-}
-
-/* ---------------------------------------------------------------------------
-   Marketing landing page (/landing) design tokens + helpers.
-   Salvaged from the closed "Marketing" PR (#3). Scoped by unique names so they
-   don't affect the existing app; the landing components reference these Tailwind
-   color/radius tokens (e.g. bg-surface-base, text-ink-dark, rounded-jumbo).
-   --------------------------------------------------------------------------- */
 @theme {
-  --color-ink-dark: #1c2b4a;
-  --color-surface-base: #fffdf7;
-  --color-surface-raised: #fffbf0;
-  --color-surface-elevated: #fff9e6;
-  --color-border-fine: #eadcc9;
-  --color-accent-teal: #1a9b8c;
-  --color-accent-teal-soft: #d9f3ee;
-  --color-accent-coral: #f97b5c;
-  --color-accent-yellow: #f5a623;
+  --color-ink-dark: #1C2B4A;
+  --color-surface-base: #FFFDF7;
+  --color-surface-raised: #FFFBF0;
+  --color-surface-elevated: #FFF9E6;
+  --color-border-fine: #EADCC9;
+  --color-accent-teal: #1A9B8C;
+  --color-accent-teal-soft: #D9F3EE;
+  --color-accent-coral: #F97B5C;
+  --color-accent-yellow: #F5A623;
+  --font-sans: 'Nunito', sans-serif;
   --radius-jumbo: 2rem;
 }
 
 @keyframes pulseDot {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(1.5);
-  }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.5); }
 }
 
 .animate-pulseDot {
@@ -90,12 +24,12 @@ body {
 }
 
 .word-punchout {
-  color: #1a9b8c;
+  color: #1A9B8C;
   display: inline;
 }
 
 .nav-link-underline::after {
-  content: "";
+  content: '';
   position: absolute;
   bottom: -4px;
   left: 0;
@@ -110,4 +44,14 @@ body {
 .nav-link-underline:hover::after {
   transform: scaleX(1);
   transform-origin: left;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background-color: var(--color-surface-base, #FFFDF7);
+  color: var(--color-ink-dark, #1C2B4A);
 }

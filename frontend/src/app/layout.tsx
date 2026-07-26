@@ -1,22 +1,17 @@
 import type { Metadata } from "next";
-import { Baloo_2, Nunito } from "next/font/google";
+import { Nunito } from "next/font/google";
 import "./globals.css";
 
-const baloo = Baloo_2({
-  variable: "--font-baloo",
-  subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
-});
-
 const nunito = Nunito({
-  variable: "--font-nunito",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-nunito",
 });
 
 export const metadata: Metadata = {
-  title: "NarrateMe",
-  description: "Turn a written story into a narrated, illustrated presentation",
+  title: "NarrateMe | AI-Powered Educational Stories",
+  description:
+    "Turn any story into a narrated, illustrated presentation for children in under 60 seconds.",
 };
 
 export default function RootLayout({
@@ -25,11 +20,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${baloo.variable} ${nunito.variable} h-full antialiased`}
-    >
-      <body className="flex min-h-full flex-col font-[family-name:var(--font-nunito)]">
+    <html lang="en" className={`${nunito.variable} h-full antialiased`}>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+          crossOrigin="anonymous"
+          referrerPolicy="no-referrer"
+        />
+      </head>
+      <body className="min-h-full flex flex-col bg-surface-base text-ink-dark antialiased">
         {children}
       </body>
     </html>

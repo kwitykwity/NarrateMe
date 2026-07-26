@@ -27,7 +27,7 @@ export default function StatsSection() {
           const data = await res.json();
           setStats(data);
         }
-      } catch {
+      } catch (err) {
         // Fallback to default state on error
       }
     }

@@ -2,10 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Fragment, Suspense, useState, useEffect, useRef, useSyncExternalStore } from "react";
-import { PageDoodles } from "../components/PageDoodles";
-import { T } from "../lib/design";
+import { Fragment, useState, useEffect, useRef, useSyncExternalStore } from "react";
 import OwlAvatar from "./OwlAvatar";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -83,10 +80,6 @@ const AUDIO_RETRY_BACKOFF_MS = 0;
 interface ScenesData {
   character_description: string;
   scenes: Scene[];
-  // Set by the backend content-safety guardrail when a story is too intense for
-  // young readers; the player shows a friendly notice instead of generating.
-  blocked?: boolean;
-  block_reason?: string;
 }
 
 // Shape of the pre-baked backup manifest at /public/demo-story.json. Its scenes
@@ -130,36 +123,22 @@ function PresentationContent() {
   // false during SSR and the first hydration render, true once on the client.
   const hydrated = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const story = hydrated ? sessionStorage.getItem("narrateme:story") : null;
-  // Demo mode (?demo=1): show the pre-generated story immediately, skipping all
-  // live generation. Read via useSearchParams (not window.location.search) so it
-  // reacts to client-side navigation from the home page. Reading the URL during
-  // render didn't re-run on the router.push into /presentation?demo=1, leaving
-  // demo=false and showing the "No story provided" screen. useSearchParams needs
-  // the <Suspense> boundary added around this component in PresentationPage below.
-  const demo = useSearchParams().has("demo");
 
-  const [status, setStatus] = useState<"loading" | "generating" | "done" | "error" | "blocked">("loading");
+  const [status, setStatus] = useState<"loading" | "generating" | "done" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
   const [scenesData, setScenesData] = useState<ScenesData | null>(null);
-  // True once live generation failed and we fell back to the pre-baked backup
-  // story. Surfaces the fallback notice — but only in live mode, never in the
-  // intentional demo (the demo path never sets this).
+  const [usedBackupStory, setUsedBackupStory] = useState(false);
+  const [liveGenerationStatus, setLiveGenerationStatus] = useState<"checking" | "ready" | "limited">("checking");
+  // True once we've fallen back to the pre-baked backup story instead of live
+  // generation, so the UI can flag it.
   const [isBackup, setIsBackup] = useState(false);
   const [currentScene, setCurrentScene] = useState(0);
   // When true, each scene's narration plays automatically and advances to the
   // next scene when the audio ends (hands-free read-along).
   const [autoAdvance, setAutoAdvance] = useState(false);
-  // True once the reader clicks "Start read-along". That click is the user
-  // gesture browsers require before narration audio may autoplay, so until it
-  // happens we show a start overlay rather than let the initial play() be
-  // silently rejected (which would stall auto-advance on scene 1).
-  const [hasStarted, setHasStarted] = useState(false);
   // Index of the word currently being narrated in the active scene (-1 = none),
   // driven by the audio element's timeupdate events.
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
-  // True while narration is actively playing, driven by the audio element's
-  // play/pause/ended events; toggles the owl's "talking" animation.
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   // The <audio> element is keyed by scene, so React mounts a fresh one each
   // scene which would otherwise reset to full volume. Remember the reader's
@@ -168,31 +147,21 @@ function PresentationContent() {
   const mutedRef = useRef(false);
 
   useEffect(() => {
-    if (!story && !demo) return;
+    if (!story) return;
 
     const controller = new AbortController();
     let cancelled = false;
 
     async function generatePresentation() {
-      // Demo mode: skip live generation entirely and load the pre-generated
-      // story immediately, so a full presentation is on screen with no wait.
-      if (demo) {
-        try {
-          setStatus("loading");
-          const backup = await loadBackupStory(controller.signal);
-          if (cancelled) return;
-          setScenesData(backup);
-          setStatus("done");
-        } catch (err) {
-          if (cancelled) return;
-          if (err instanceof DOMException && err.name === "AbortError") return;
-          setError("Couldn't load the demo story");
-          setStatus("error");
-        }
-        return;
-      }
-
       try {
+        const healthRes = await fetch(`${API_URL}/health`);
+        if (healthRes.ok) {
+          const health = await healthRes.json();
+          const services = health.ai_services ?? {};
+          const configured = Object.values(services).filter((service: any) => service?.configured).length;
+          setLiveGenerationStatus(configured === 3 ? "ready" : "limited");
+        }
+
         // Step 1: Split story into scenes
         setStatus("loading");
         const scenesRes = await fetch(`${API_URL}/api/scenes`, {
@@ -208,18 +177,6 @@ function PresentationContent() {
 
         const data: ScenesData = await scenesRes.json();
         if (cancelled) return;
-
-        // Content-safety guardrail: the story was withheld as too intense for
-        // young readers. Show a friendly notice instead of generating anything.
-        if (data.blocked) {
-          setError(
-            data.block_reason ||
-              "This story isn't quite right for young readers. Try a gentler one!"
-          );
-          setStatus("blocked");
-          return;
-        }
-
         setScenesData(data);
         setStatus("generating");
 
@@ -356,14 +313,15 @@ function PresentationContent() {
         if (cancelled) return;
         // Intentional cancellation (StrictMode remount / unmount): stay silent.
         if (err instanceof DOMException && err.name === "AbortError") return;
-        // Live generation failed before we could show anything (e.g. the
-        // scene-split call errored). Fall back to the pre-baked backup story so
-        // a demo still has a complete presentation to play.
+        // Live generation failed before we could show anything (for example,
+        // because the AI services are not configured locally). Fall back to the
+        // bundled backup story so the demo still plays.
         try {
           const backup = await loadBackupStory(controller.signal);
           if (cancelled) return;
           setScenesData(backup);
           setIsBackup(true);
+          setUsedBackupStory(true);
           setStatus("done");
         } catch {
           if (cancelled) return;
@@ -379,7 +337,7 @@ function PresentationContent() {
       cancelled = true;
       controller.abort();
     };
-  }, [story, demo]);
+  }, [story]);
 
   // Drive the read-along: when auto-advance is on and the current scene's
   // narration is ready, play it. Changing scene (or a newly-arrived audio URL)
@@ -409,7 +367,6 @@ function PresentationContent() {
   const goToScene = (updater: (c: number) => number) => {
     setCurrentScene(updater);
     setCurrentWordIndex(-1);
-    setIsSpeaking(false);
   };
 
   // Manual escape hatch: load the backup story on demand (e.g. from the error
@@ -420,6 +377,7 @@ function PresentationContent() {
       const backup = await loadBackupStory();
       setScenesData(backup);
       setIsBackup(true);
+      setUsedBackupStory(true);
       setCurrentScene(0);
       setCurrentWordIndex(-1);
       setStatus("done");
@@ -429,51 +387,13 @@ function PresentationContent() {
     }
   };
 
-  if (hydrated && !story && !demo) {
+  if (hydrated && !story) {
     return (
       <div className="text-center">
-        <p className="mb-4 font-medium" style={{ color: T.muted }}>
-          No story provided
-        </p>
-        <Link
-          href="/"
-          className="font-semibold underline-offset-2 hover:underline"
-          style={{ color: T.roseDark }}
-        >
+        <p className="text-zinc-600 dark:text-zinc-400 mb-4">No story provided</p>
+        <Link href="/" className="text-blue-600 hover:underline dark:text-blue-400">
           Go back and enter a story
         </Link>
-      </div>
-    );
-  }
-
-  if (status === "blocked") {
-    return (
-      <div className="text-center">
-        <p className="mb-2 text-lg font-bold" style={{ color: T.roseDark }}>
-          Let&apos;s pick a gentler story
-        </p>
-        <p className="mb-4 font-medium" style={{ color: T.muted }}>
-          {error}
-        </p>
-        <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={showBackup}
-            className="rounded-full px-5 py-2.5 font-bold text-white transition-transform hover:scale-[1.03]"
-            style={{
-              background: T.rose,
-              boxShadow: `0 4px 0 ${T.roseDark}`,
-            }}
-          >
-            Show a safe sample story
-          </button>
-          <Link
-            href="/"
-            className="font-semibold underline-offset-2 hover:underline"
-            style={{ color: T.muted }}
-          >
-            Choose a different story
-          </Link>
-        </div>
       </div>
     );
   }
@@ -481,25 +401,15 @@ function PresentationContent() {
   if (status === "error") {
     return (
       <div className="text-center">
-        <p className="mb-4 font-medium" style={{ color: T.roseDark }}>
-          {error}
-        </p>
+        <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={showBackup}
-            className="rounded-full px-5 py-2.5 font-bold text-white transition-transform hover:scale-[1.03]"
-            style={{
-              background: T.rose,
-              boxShadow: `0 4px 0 ${T.roseDark}`,
-            }}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
           >
             Show the backup story
           </button>
-          <Link
-            href="/"
-            className="font-semibold underline-offset-2 hover:underline"
-            style={{ color: T.muted }}
-          >
+          <Link href="/" className="text-blue-600 hover:underline dark:text-blue-400">
             Try again
           </Link>
         </div>
@@ -509,23 +419,10 @@ function PresentationContent() {
 
   if (status === "loading" || !scenesData) {
     return (
-      <div className="w-full max-w-xl">
-        <div
-          className="flex items-center justify-center gap-3 p-12"
-          style={{
-            background: T.white,
-            borderRadius: "1.5rem",
-            border: `2px solid ${T.rose}30`,
-            boxShadow: `0 6px 0 ${T.roseDark}22`,
-          }}
-        >
-          <div
-            className="h-5 w-5 animate-spin rounded-full border-2 border-t-transparent"
-            style={{ borderColor: T.rose, borderTopColor: "transparent" }}
-          />
-          <p className="font-semibold" style={{ color: T.muted }}>
-            Reading your story…
-          </p>
+      <div className="w-full max-w-3xl">
+        <div className="flex items-center justify-center gap-3 p-12 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
+          <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+          <p className="text-zinc-600 dark:text-zinc-400">Splitting story into scenes...</p>
         </div>
       </div>
     );
@@ -548,31 +445,11 @@ function PresentationContent() {
     }
   };
 
-  // Begin the hands-free read-along from the current (first) scene. This runs
-  // from a click, so the browser honors this initial play(); once playback has
-  // started, the auto-advance effect may autoplay every subsequent clip too.
-  const startReadAlong = () => {
-    setHasStarted(true);
-    setAutoAdvance(true);
-    audioRef.current?.play().catch(() => {});
-  };
-
-  // Replay the current scene's narration from the start (rewind to 0 and play),
-  // clearing the word highlight so it re-follows from the first word.
-  const replayScene = () => {
-    const el = audioRef.current;
-    if (!el) return;
-    el.currentTime = 0;
-    setCurrentWordIndex(-1);
-    el.play().catch(() => {});
-  };
-
   // When a scene's narration finishes, clear the highlight; during read-along
   // also advance to the next scene (its audio auto-plays via the effect), or
   // stop on the last scene.
   const handleAudioEnded = () => {
     setCurrentWordIndex(-1);
-    setIsSpeaking(false);
     if (!autoAdvance) return;
     if (currentScene < totalScenes - 1) {
       setCurrentScene((c) => c + 1);
@@ -600,13 +477,17 @@ function PresentationContent() {
 
   return (
     <div className="w-full max-w-4xl">
-      {/* Fallback notice — shown only for LIVE generation that had to fall back
-          to the backup story. Never shown in demo mode (the demo never sets
-          isBackup, and the !demo guard makes that explicit), so a demo stays
-          silent while real usage still gets honest feedback. */}
-      {isBackup && !demo && (
+      {liveGenerationStatus !== "ready" && (
         <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-400">
-          Live generation was unavailable — showing a pre-loaded backup story.
+          {liveGenerationStatus === "limited"
+            ? "Live generation is limited right now, so this demo is using the bundled backup story."
+            : "Checking live generation availability…"}
+        </div>
+      )}
+
+      {isBackup && (
+        <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-400">
+          Live generation is unavailable right now, so this demo is using the bundled backup story.
         </div>
       )}
 
@@ -621,48 +502,9 @@ function PresentationContent() {
       )}
 
       {/* Scene Card */}
-      <div className="relative bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden shadow-lg">
-        {/* Start overlay: the single user gesture that unlocks narration
-            autoplay. Shown until the reader begins; the primary button enables
-            once the first scene's narration is ready. The secondary action
-            always lets the reader proceed so a slow/failed clip can't trap them. */}
-        {!hasStarted && (
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-white/85 dark:bg-black/80 backdrop-blur-sm">
-            <button
-              onClick={startReadAlong}
-              disabled={!scene.audio_url}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-blue-600 text-white text-lg font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-lg"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-              <span>Start read-along</span>
-            </button>
-            {scene.audio_url ? (
-              <button
-                onClick={() => setHasStarted(true)}
-                className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-              >
-                Skip and explore on my own
-              </button>
-            ) : scene.audio_error ? (
-              <button
-                onClick={() => setHasStarted(true)}
-                className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-              >
-                Narration unavailable — continue without it
-              </button>
-            ) : (
-              <span className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-                <span className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></span>
-                Preparing narration...
-              </span>
-            )}
-          </div>
-        )}
-
+      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden shadow-lg">
         {/* Image */}
-        <div className="relative aspect-[3/2] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+        <div className="relative aspect-video bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
           {scene.image_url ? (
             <Image
               src={scene.image_url}
@@ -700,7 +542,7 @@ function PresentationContent() {
 
           {/* Owl narrator: self-contained, fetches + draws itself from the
               scene's emotion. Mounted here so it sits at the image's bottom edge. */}
-          <OwlAvatar emotion={scene.emotion} speaking={isSpeaking} />
+          <OwlAvatar emotion={scene.emotion} />
         </div>
 
         {/* Text */}
@@ -727,37 +569,22 @@ function PresentationContent() {
           {/* Narration */}
           <div className="mt-4">
             {scene.audio_url ? (
-              <>
-                <audio
-                  key={scene.scene_number}
-                  ref={audioRef}
-                  controls
-                  preload="auto"
-                  src={scene.audio_url}
-                  onTimeUpdate={handleTimeUpdate}
-                  onEnded={handleAudioEnded}
-                  onPlay={() => setIsSpeaking(true)}
-                  onPause={() => setIsSpeaking(false)}
-                  onVolumeChange={(e) => {
-                    volumeRef.current = e.currentTarget.volume;
-                    mutedRef.current = e.currentTarget.muted;
-                  }}
-                  className="w-full"
-                >
-                  Your browser does not support audio playback.
-                </audio>
-                <div className="mt-2 flex justify-center">
-                  <button
-                    onClick={replayScene}
-                    className="inline-flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
-                      <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
-                    </svg>
-                    <span>Replay</span>
-                  </button>
-                </div>
-              </>
+              <audio
+                key={scene.scene_number}
+                ref={audioRef}
+                controls
+                preload="auto"
+                src={scene.audio_url}
+                onTimeUpdate={handleTimeUpdate}
+                onEnded={handleAudioEnded}
+                onVolumeChange={(e) => {
+                  volumeRef.current = e.currentTarget.volume;
+                  mutedRef.current = e.currentTarget.muted;
+                }}
+                className="w-full"
+              >
+                Your browser does not support audio playback.
+              </audio>
             ) : scene.audio_error ? (
               <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-500">
                 <svg
@@ -786,28 +613,25 @@ function PresentationContent() {
         </div>
       </div>
 
-      {/* Read-along control: available once started; before that the start
-          overlay on the scene card is the entry point. */}
-      {hasStarted && (
-        <div className="mt-6 flex justify-center">
-          <button
-            onClick={toggleReadAlong}
-            disabled={audioLoaded === 0}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            {autoAdvance ? (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-                <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            )}
-            <span>{autoAdvance ? "Pause" : "Play story"}</span>
-          </button>
-        </div>
-      )}
+      {/* Read-along control */}
+      <div className="mt-6 flex justify-center">
+        <button
+          onClick={toggleReadAlong}
+          disabled={audioLoaded === 0}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          {autoAdvance ? (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+              <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+          <span>{autoAdvance ? "Pause" : "Play story"}</span>
+        </button>
+      </div>
 
       {/* Navigation */}
       <div className="mt-6 flex items-center justify-between">
@@ -845,60 +669,17 @@ function PresentationContent() {
   );
 }
 
-// Suspense fallback for PresentationContent. useSearchParams suspends the
-// component up to the nearest boundary while the query string resolves, so this
-// mirrors the in-component "loading" card to keep the transition seamless.
-function PresentationFallback() {
-  return (
-    <div className="w-full max-w-xl">
-      <div
-        className="flex items-center justify-center gap-3 p-12"
-        style={{
-          background: T.white,
-          borderRadius: "1.5rem",
-          border: `2px solid ${T.rose}30`,
-          boxShadow: `0 6px 0 ${T.roseDark}22`,
-        }}
-      >
-        <div
-          className="h-5 w-5 animate-spin rounded-full border-2 border-t-transparent"
-          style={{ borderColor: T.rose, borderTopColor: "transparent" }}
-        />
-        <p className="font-semibold" style={{ color: T.muted }}>
-          Reading your story…
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export default function PresentationPage() {
   return (
-    <div
-      className="relative flex min-h-full flex-col items-center px-4 py-12"
-      style={{ background: T.bg, fontFamily: "var(--font-nunito), sans-serif" }}
-    >
-      <PageDoodles />
-      <div className="relative z-10 mb-8 text-center">
-        <h1
-          className="mb-2 text-3xl font-bold"
-          style={{
-            fontFamily: "var(--font-baloo), cursive",
-            color: T.ink,
-          }}
-        >
+    <div className="flex flex-col flex-1 items-center bg-zinc-50 dark:bg-black px-4 py-12">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">
           NarrateMe
         </h1>
-        <p className="font-medium" style={{ color: T.muted }}>
-          Your illustrated story
-        </p>
+        <p className="text-zinc-600 dark:text-zinc-400">Your illustrated story</p>
       </div>
 
-      <div className="relative z-10 w-full flex justify-center">
-        <Suspense fallback={<PresentationFallback />}>
-          <PresentationContent />
-        </Suspense>
-      </div>
+      <PresentationContent />
     </div>
   );
 }
