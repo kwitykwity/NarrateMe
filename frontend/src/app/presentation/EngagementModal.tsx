@@ -51,7 +51,7 @@ export default function EngagementModal({ prompt, onDismiss }: EngagementModalPr
       />
 
       {/* Modal Card */}
-      <div className="relative bg-surface-elevated rounded-3xl shadow-2xl max-w-md w-full p-8 text-center animate-in zoom-in-95 duration-200">
+      <div className="relative bg-surface-elevated rounded-3xl shadow-2xl max-w-md w-full p-8 text-center">
         {/* Owl Avatar */}
         <div className="flex justify-center mb-4">
           <div className="w-24 h-24 relative">
