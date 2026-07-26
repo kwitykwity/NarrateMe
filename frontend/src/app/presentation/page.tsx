@@ -515,11 +515,18 @@ function PresentationContent() {
     }
   };
 
+  // Track which scenes have shown their "before" prompt to avoid re-showing
+  const shownBeforePrompts = useRef<Set<number>>(new Set());
+
   // Check for "before" engagement prompts when scene changes
   useEffect(() => {
     if (!scenesData) return;
     const engagement = scenesData.scenes[currentScene]?.engagement;
-    if (engagement?.timing === "before" && !showingPrompt) {
+    if (
+      engagement?.timing === "before" &&
+      !shownBeforePrompts.current.has(currentScene)
+    ) {
+      shownBeforePrompts.current.add(currentScene);
       setShowingPrompt(true);
     }
   }, [currentScene, scenesData]);
