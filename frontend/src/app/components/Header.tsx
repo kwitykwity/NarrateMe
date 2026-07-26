@@ -23,10 +23,10 @@ export default function Header({ onStartStory }: HeaderProps) {
           <a href="#how-it-works" className="relative nav-link-underline">
             How It Works
           </a>
-          <a href="#for-whom" className="relative nav-link-underline">
+          <a href="#for-teachers" className="relative nav-link-underline">
             For Teachers
           </a>
-          <a href="#for-whom" className="relative nav-link-underline">
+          <a href="#for-parents" className="relative nav-link-underline">
             For Parents
           </a>
           <div className="w-1.5 h-1.5 rounded-full bg-accent-yellow animate-pulseDot"></div>

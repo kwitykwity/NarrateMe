@@ -9,7 +9,7 @@ export default function ForWhom({ onStartStoryClick }: ForWhomProps) {
     <section id="for-whom" className="py-24 px-6 md:px-12 lg:px-20 bg-surface-base">
       <div className="max-w-7xl mx-auto space-y-24">
         {/* For Teachers */}
-        <div className="flex flex-col md:flex-row items-center gap-12 bg-accent-teal-soft p-10 rounded-jumbo border border-accent-teal/10 shadow-sm">
+        <div id="for-teachers" className="flex flex-col md:flex-row items-center gap-12 bg-accent-teal-soft p-10 rounded-jumbo border border-accent-teal/10 shadow-sm scroll-mt-24">
           <div className="w-full md:w-1/2">
             <img
               className="rounded-jumbo shadow-xl w-full aspect-[4/5] object-cover border border-white/50"
@@ -34,7 +34,7 @@ export default function ForWhom({ onStartStoryClick }: ForWhomProps) {
         </div>
 
         {/* For Parents */}
-        <div className="flex flex-col md:flex-row-reverse items-center gap-12 bg-[#FFF4E0] p-10 rounded-jumbo border border-accent-yellow/20 shadow-sm">
+        <div id="for-parents" className="flex flex-col md:flex-row-reverse items-center gap-12 bg-[#FFF4E0] p-10 rounded-jumbo border border-accent-yellow/20 shadow-sm scroll-mt-24">
           <div className="w-full md:w-1/2">
             <img
               className="rounded-jumbo shadow-xl w-full aspect-[4/5] object-cover border border-white/50"
