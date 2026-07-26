@@ -23,7 +23,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-surface-base text-ink-dark antialiased">
       {/* Fixed Navigation Bar */}
-      <Header onStartStory={goToCreateStory} />
+      <Header />
 
       {/* Main Landing Page Content */}
       <main className="flex-1">

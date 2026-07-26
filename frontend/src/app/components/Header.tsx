@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 
-interface HeaderProps {
-  onStartStory?: () => void;
-}
-
-export default function Header({ onStartStory }: HeaderProps) {
+export default function Header() {
   return (
     <header className="fixed top-0 left-0 w-full z-50 px-6 py-4 flex items-center justify-between bg-surface-base/80 backdrop-blur-md border-b border-border-fine">
       <div className="flex items-center space-x-8">
@@ -32,12 +28,6 @@ export default function Header({ onStartStory }: HeaderProps) {
           <div className="w-1.5 h-1.5 rounded-full bg-accent-yellow animate-pulseDot"></div>
         </nav>
       </div>
-      <button
-        onClick={onStartStory}
-        className="bg-accent-yellow text-ink-dark px-6 py-2 rounded-full text-sm font-bold hover:bg-accent-coral hover:text-white transition-colors shadow-sm cursor-pointer"
-      >
-        Try It Free &rarr;
-      </button>
     </header>
   );
 }
