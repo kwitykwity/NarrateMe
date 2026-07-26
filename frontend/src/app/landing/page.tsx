@@ -1,24 +1,18 @@
 "use client";
 
-import { useRef } from "react";
+import { useRouter } from "next/navigation";
 import Header from "../components/Header";
 import Hero from "../components/Hero";
-import StoryGenerator from "../components/StoryGenerator";
 import HowItWorks from "../components/HowItWorks";
 import ForWhom from "../components/ForWhom";
 import StatsSection from "../components/StatsSection";
 import Footer from "../components/Footer";
 
 export default function LandingPage() {
-  const storyGeneratorRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
 
-  const scrollToStoryGenerator = () => {
-    if (storyGeneratorRef.current) {
-      storyGeneratorRef.current.scrollIntoView({ behavior: "smooth" });
-    } else {
-      const el = document.getElementById("create-story");
-      if (el) el.scrollIntoView({ behavior: "smooth" });
-    }
+  const goToCreateStory = () => {
+    router.push("/");
   };
 
   const scrollToDemo = () => {
@@ -29,24 +23,21 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-surface-base text-ink-dark antialiased">
       {/* Fixed Navigation Bar */}
-      <Header onStartStory={scrollToStoryGenerator} />
+      <Header onStartStory={goToCreateStory} />
 
       {/* Main Landing Page Content */}
       <main className="flex-1">
         {/* Hero Section */}
         <Hero
-          onCreateStoryClick={scrollToStoryGenerator}
+          onCreateStoryClick={goToCreateStory}
           onSeeDemoClick={scrollToDemo}
         />
-
-        {/* Interactive Story Generator Form */}
-        <StoryGenerator sectionRef={storyGeneratorRef} />
 
         {/* How It Works Section */}
         <HowItWorks />
 
         {/* For Teachers / Parents Section */}
-        <ForWhom onStartStoryClick={scrollToStoryGenerator} />
+        <ForWhom onStartStoryClick={goToCreateStory} />
 
         {/* Platform Metrics & Stats Section */}
         <StatsSection />
@@ -61,7 +52,7 @@ export default function LandingPage() {
               Join thousands of teachers and parents creating magical reading moments every day.
             </p>
             <button
-              onClick={scrollToStoryGenerator}
+              onClick={goToCreateStory}
               className="bg-accent-teal text-white px-12 py-4 rounded-full font-bold text-lg hover:bg-ink-dark transition-all transform hover:scale-105 shadow-xl cursor-pointer"
             >
               Start Creating — It&apos;s Free
