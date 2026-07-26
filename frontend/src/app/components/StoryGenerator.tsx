@@ -42,23 +42,9 @@ export default function StoryGenerator({ sectionRef }: StoryGeneratorProps) {
 
     setIsLoading(true);
 
-    try {
-      const res = await fetch(`${API_URL}/api/demo/story`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ story: story.trim() }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Unable to save your story right now.");
-      }
-
-      sessionStorage.setItem("narrateme:story", story.trim());
-      window.location.href = "/presentation";
-    } catch (err: any) {
-      setErrorMessage(err.message || "Failed to initiate presentation mode. Please try again.");
-      setIsLoading(false);
-    }
+    // Save story to sessionStorage and navigate to presentation
+    sessionStorage.setItem("narrateme:story", story.trim());
+    window.location.href = "/presentation";
   };
 
   const loadSample = (text: string) => {
