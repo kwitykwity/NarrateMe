@@ -52,10 +52,13 @@ export default function EngagementModal({ prompt, onDismiss }: EngagementModalPr
 
       {/* Modal Card */}
       <div className="relative bg-surface-elevated rounded-3xl shadow-2xl max-w-md w-full p-8 text-center">
-        {/* Owl Avatar */}
-        <div className="flex justify-center mb-4">
-          <div className="w-24 h-24 relative">
-            <OwlAvatar emotion={owlEmotion} />
+        {/* Owl Avatar - override absolute positioning for modal context */}
+        <div className="flex justify-center mb-6">
+          <div className="w-20 h-20 relative">
+            <OwlAvatar
+              emotion={owlEmotion}
+              className="!static !translate-x-0 !translate-y-0 !left-auto !bottom-auto"
+            />
           </div>
         </div>
 

@@ -105,6 +105,7 @@ interface BackupStory {
     audio_url: string;
     word_timings?: WordTiming[];
     emotion?: string;
+    engagement?: EngagementPrompt;
   }[];
 }
 
@@ -126,6 +127,7 @@ async function loadBackupStory(signal?: AbortSignal): Promise<ScenesData> {
       audio_url: s.audio_url,
       word_timings: s.word_timings,
       emotion: s.emotion,
+      engagement: s.engagement,
     })),
   };
 }
@@ -159,6 +161,21 @@ function PresentationContent() {
   // Engagement prompt state - shows modal for active listening prompts
   const [showingPrompt, setShowingPrompt] = useState(false);
   const [pendingAdvance, setPendingAdvance] = useState(false);
+  // Track which scenes have shown their "before" prompt to avoid re-showing
+  const shownBeforePrompts = useRef<Set<number>>(new Set());
+
+  // Check for "before" engagement prompts when scene changes
+  useEffect(() => {
+    if (!scenesData) return;
+    const engagement = scenesData.scenes[currentScene]?.engagement;
+    if (
+      engagement?.timing === "before" &&
+      !shownBeforePrompts.current.has(currentScene)
+    ) {
+      shownBeforePrompts.current.add(currentScene);
+      setShowingPrompt(true);
+    }
+  }, [currentScene, scenesData]);
 
   useEffect(() => {
     if (!story) return;
@@ -514,22 +531,6 @@ function PresentationContent() {
       }
     }
   };
-
-  // Track which scenes have shown their "before" prompt to avoid re-showing
-  const shownBeforePrompts = useRef<Set<number>>(new Set());
-
-  // Check for "before" engagement prompts when scene changes
-  useEffect(() => {
-    if (!scenesData) return;
-    const engagement = scenesData.scenes[currentScene]?.engagement;
-    if (
-      engagement?.timing === "before" &&
-      !shownBeforePrompts.current.has(currentScene)
-    ) {
-      shownBeforePrompts.current.add(currentScene);
-      setShowingPrompt(true);
-    }
-  }, [currentScene, scenesData]);
 
   return (
     <div className="w-full max-w-4xl">
