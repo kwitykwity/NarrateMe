@@ -17,15 +17,18 @@ NarrateMe helps teachers and parents of kids in grades 1–3 turn any plain writ
 - Scene splitting via Claude → structured JSON with a persistent character description reused across scenes
 - Per-scene illustration via an OpenAI image model, using the shared character prompt for consistency
 - Per-scene narration via ElevenLabs, returned as an inline audio player on each scene card
-- Concurrent generation — images and narration each run through a bounded worker pool (max 3 in flight) with a per-scene retry and a visible error state on final failure
+- Concurrent generation — images and narration each run through a bounded worker pool (max 2 in flight) with a per-scene retry and a visible error state on final failure
 - Presentation player — scene cards (illustration + text + narration audio), Previous/Next navigation, live image and narration progress
-- Backend hardening — request timeouts (60s scenes / 120s images / 60s narration), structured logging, API-key validation, `504` on timeout
-
-**Not yet built (still in v1 scope):**
-- Word highlighting synced to narration audio
-- Static / 2-pose avatar synced to audio playback
-- Auto-advance playback
+- Word highlighting synced to narration audio (via ElevenLabs character-level timestamps)
+- Owl avatar narrator synced to audio playback with emotion-based expressions
+- Auto-advance "Play story" mode — plays through all scenes hands-free
 - Pre-generated backup story for demo resilience
+- Engagement prompts for active listening:
+  - Sound cues before scenes ("Clap when you hear...")
+  - Reading prompts after scenes ("What do you think happens next?")
+  - Comprehension checks with answer hints for grown-ups
+- Content safety guardrails — softens mature content for young readers or blocks unsuitable stories
+- Backend hardening — request timeouts (60s scenes / 120s images / 60s narration), structured logging, API-key validation, `504` on timeout
 
 **Known gap:** OpenAI's per-image latency is highly variable (~40s nominal, but can climb past the 120s backend timeout under throttling). Generation is now concurrent (capped at 3), so total time scales with the slowest image rather than the sum; a slow outlier returns `504`, after which the frontend retries once and, if that also fails, shows a per-scene error card.
 
@@ -48,7 +51,8 @@ NarrateMe helps teachers and parents of kids in grades 1–3 turn any plain writ
 2. **Scene splitting** — An LLM (Claude/GPT) splits the story into 3–5 scenes (beginning/middle/end structure) and outputs structured JSON, including a persistent character description reused across every scene.
 3. **Illustration** — DALL-E 3 generates one illustration per scene, using the shared character description to keep the character visually consistent.
 4. **Narration** — ElevenLabs generates narration audio per scene using a warm voice ("Sarah") suited to early readers, returned as a base64 MP3 and played inline on each scene card.
-5. **Playback** — A simple presentation player shows each scene's illustration alongside its text and a narration audio player, advanced scene by scene with Previous/Next controls. Narration-synced word highlighting, auto-advance, and a static/2-pose avatar are *planned*.
+5. **Playback** — A presentation player shows each scene's illustration alongside its text and a narration audio player, with word-by-word highlighting synced to narration. An owl avatar narrator reacts with emotion-based expressions. "Play story" mode auto-advances through all scenes hands-free.
+6. **Engagement** — 2–3 engagement prompts per story turn passive listeners into active participants: sound cues before scenes, reading prompts and comprehension checks after scenes.
 
 ---
 
@@ -61,7 +65,7 @@ NarrateMe helps teachers and parents of kids in grades 1–3 turn any plain writ
 | Scene generation | Anthropic Claude (structured JSON output) |
 | Image generation | OpenAI image model (returns base64 PNG) |
 | Text-to-Speech | ElevenLabs (`AsyncElevenLabs`, returns base64 MP3) |
-| Avatar | Static image / 2-pose swap *(planned — not yet integrated)* |
+| Avatar | Owl narrator with 5 emotion-based expressions (happy, sad, excited, scared, calm) |
 | Hosting | Vercel (frontend) + Railway (backend) |
 | Storage | None required for MVP — stateless, one-shot generation |
 
@@ -163,19 +167,22 @@ CORS errors in the browser console.
 
 ---
 
-## MVP Scope (Must Have)
+## MVP Scope (Must Have) ✅
 
-- Text input only (no speech-to-text)
-- LLM scene splitting into 3–5 scenes
-- One illustration per scene (DALL-E 3, consistent character prompt)
-- TTS narration per scene
-- Simple presentation player (image + highlighted text + auto-advance)
-- Static or 2-pose avatar synced to audio playback
+- ✅ Text input only (no speech-to-text)
+- ✅ LLM scene splitting into 5 scenes
+- ✅ One illustration per scene (OpenAI image model, consistent character prompt)
+- ✅ TTS narration per scene with word-level timestamps
+- ✅ Presentation player (image + highlighted text + auto-advance)
+- ✅ Owl avatar with emotion-based expressions
+- ✅ Engagement prompts for active listening
+- ✅ Content safety guardrails
 
 ## Non-Goals (v1)
 
 - Lip-sync / gesture animation
-- Comprehension quizzes or vocabulary activities
+- Advanced comprehension quizzes with scoring (basic comprehension checks are implemented)
+- Vocabulary activities
 - Teacher dashboard, analytics, or story library
 - Background music
 - Speech-to-text / audio story input
@@ -189,6 +196,7 @@ CORS errors in the browser console.
 - The pipeline completes without manual intervention on at least 2 different test stories.
 - Word highlighting stays roughly in sync with narration.
 - A backup pre-generated story is ready in case live generation fails during the demo.
+- Engagement prompts (2–3 per story) display correctly and pause/resume auto-advance.
 
 ---
 
@@ -212,4 +220,4 @@ CORS errors in the browser console.
 
 ## Future Scope (Post-Sprint)
 
-Avatar lip-sync, comprehension quizzes, teacher dashboard, story library, voice cloning, multi-language support, background music/sound design, analytics.
+Avatar lip-sync, advanced comprehension quizzes with scoring, vocabulary activities, teacher dashboard, story library, voice cloning, multi-language support, background music/sound design, analytics.
