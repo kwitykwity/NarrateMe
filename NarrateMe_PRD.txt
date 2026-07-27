@@ -40,7 +40,8 @@ Keep the same illustrated character recognizable across all scenes in a given st
 Complete generation in under 60 seconds so the experience feels immediate, not like a batch job.
 Non-Goals
 Lip-sync or gesture animation on the avatar — deferred to a future version.
-Comprehension quizzes, vocabulary activities, teacher dashboards, analytics, or a saved story library — deferred, not part of this build.
+Vocabulary activities, teacher dashboards, analytics, or a saved story library — deferred, not part of this build.
+Note: Basic comprehension checks and engagement prompts have been implemented as part of the active listening feature.
 Speech-to-text/audio story input and multi-language support — deferred, text input only for this version.
 2d. Success Metrics
 Goal
@@ -67,6 +68,10 @@ Demo resilience
 Demo doesn't fail live
 Backup pre-generated story available
 At least 1–2 backup stories ready before demo
+Active listening
+Engagement prompts appear during playback
+2–3 prompts generated per story (scenes 2–4)
+Prompts display correctly and pause/resume auto-advance
 3. Requirements
 User Journey 1: Teacher or parent turning a story into a presentation
 Context: This is the core journey for the MVP — the entire demo depends on this flow working reliably, quickly, and without manual intervention.
@@ -87,6 +92,12 @@ Sub-journey: Viewing the presentation
 [P1] User can see the story text highlighted in sync with the narration audio.
 [P1] User can see a static or simple 2-pose avatar synced to audio playback.
 [P2] User can restart or replay a scene.
+Sub-journey: Active listening engagement
+[P1] System can generate 2–3 engagement prompts per story to turn passive listeners into active participants.
+[P1] System can display "sound cue" prompts before a scene (e.g., "Clap when you hear the dog bark!").
+[P1] System can display "reading prompts" after a scene (e.g., "What do you think happens next?").
+[P1] System can display "comprehension check" prompts after a scene with answer hints for grown-ups.
+[P1] Engagement prompts pause auto-advance playback and resume after dismissal.
 User Journey 2: Presenter demoing NarrateMe live
 Context: Since this is a 2-week MVP intended primarily for a live demo, the demo experience itself is a first-class journey, not an afterthought.
 Sub-journey: Preparing for a live demo
@@ -95,5 +106,5 @@ Sub-journey: Preparing for a live demo
 [P2] Presenter can choose between multiple pre-generated backup stories.
 4. Appendix
 Known accepted risk: character consistency across DALL-E-generated scene illustrations may drift; mitigation is a strong, persistent character-description prompt reused across every scene's image generation call, not a technical/model-level fix. Flagged as future work rather than solved in this 2-week build.
-Future scope (post-MVP, not this build): avatar lip-sync/gesture animation, comprehension quizzes, teacher dashboard, saved story library, voice cloning, multi-language support, background music/sound design, analytics.
+Future scope (post-MVP, not this build): avatar lip-sync/gesture animation, advanced comprehension quizzes with scoring, teacher dashboard, saved story library, voice cloning, multi-language support, background music/sound design, analytics.
 Team: 4 members across Backend/AI Engineer, AI/Visual Engineer, Audio Engineer, and Frontend/UX Lead roles, working in parallel over a 14-day sprint.
