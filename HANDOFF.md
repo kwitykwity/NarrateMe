@@ -4,14 +4,17 @@
 NarrateMe transforms written stories into narrated, illustrated presentations for children (grades 1-3).
 
 ## Current State
-**Last commit:** `db12b28` - Cap image concurrency and add per-scene retry and error state
 
 The core pipeline is wired end-to-end: a user pastes a story, the backend
 splits it into scenes with Claude, generates one illustration per scene with
-OpenAI, and the frontend renders a navigable scene-by-scene presentation.
-Images are generated concurrently (capped at 3 in flight) with a per-scene
-retry and a visible error state on final failure. Both endpoints have been
-tested live end-to-end and return `200`.
+OpenAI and narration with ElevenLabs, and the frontend plays it back as a
+read-along presentation with word highlighting, an owl narrator, and
+auto-advance. Images and narration each run through their own bounded worker
+pool (2 in flight each) with a per-scene retry and a visible error state on
+final failure.
+
+> Keep this file current when you land a feature — it drifted badly once
+> before, listing five shipped features as "not built".
 
 ### What's Built
 
@@ -22,8 +25,14 @@ Location: `backend/`
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/health` | GET | Health check |
-| `/api/scenes` | POST | Splits story into 3-5 illustrated scenes using Claude |
+| `/api/scenes` | POST | Splits story into scenes using Claude; also carries the content-safety verdict |
 | `/api/images` | POST | Generates an illustration from a prompt using OpenAI |
+| `/api/audio` | POST | Generates narration MP3 + word timings using ElevenLabs |
+| `/api/owl` | POST | Returns the owl narrator expression for a scene emotion |
+| `/api/demo` | GET | Pre-generated demo story manifest |
+| `/api/demo/story` | POST | Stores a submitted story (landing page) |
+| `/api/stats` | GET | Landing-page stats snapshot |
+| `/api/subscribe` | POST | Email subscription (landing page) |
 
 **Services:**
 - `scene_service.py` - Uses Claude (`claude-sonnet-5`, `AsyncAnthropic`) to split stories into scenes with character descriptions and image prompts. Wrapped in `asyncio.wait_for` (60s timeout), with structured logging, API-key validation, and JSON-extraction fallback.
@@ -60,12 +69,20 @@ Location: `frontend/`
 - Each scene retries once on failure (`IMAGE_MAX_ATTEMPTS = 2`); it keeps showing the loading spinner while retrying, and only flips to a visible error card if all attempts fail. Failures are logged to the console; the rest continue.
 - Illustrations render with `next/image` (`fill`, `unoptimized` for base64/remote sources).
 
-## What's NOT Built Yet
-- Text-to-speech narration per scene (ElevenLabs) — `ELEVENLABS_API_KEY` is reserved but unused
+## Shipped Since
+- Text-to-speech narration per scene (ElevenLabs), with character-level timings
 - Word highlighting synced to narration audio
-- Static / 2-pose avatar synced to audio playback
-- Auto-advance playback
-- Pre-generated backup story for demo resilience
+- Owl avatar narrator with emotion-based expressions, synced to playback
+- Auto-advance "Play story" read-along mode
+- Pre-generated backup story + silent Demo mode (`/presentation?demo=1`)
+- Engagement prompts (sound cues, reading prompts, comprehension checks)
+- Content-safety guardrail with a parental content level (`strict` / `moderate` / `original`)
+- Marketing landing page (`/`), with stats and email subscription
+
+## What's NOT Built Yet
+- A live-key run of the content-safety evals — the contract is verified offline,
+  but the model's judgment is not. See `EVAL_CARD.md`.
+- Persistent storage (still stateless; landing-page data goes to JSON files under `backend/data/`)
 
 **Known gap:** image generation is now concurrent (capped at 3), so total time
 scales with the slowest image rather than the sum. However, OpenAI's per-image
@@ -86,15 +103,29 @@ venv\Scripts\activate  # Windows  (source venv/bin/activate on macOS/Linux)
 pip install -r requirements.txt
 ```
 
-Create `backend/.env`:
+Create `backend/.env` (see `backend/.env.example` for the optional tuning knobs):
 ```
 API_KEY=your_anthropic_api_key
 OPENAI_API_KEY=your_openai_api_key
+ELEVENLABS_API_KEY=your_elevenlabs_api_key
 ```
+
+The server starts without keys — each client is constructed per request, so a
+missing key fails that endpoint rather than boot.
+
+> **Windows:** creating the venv inside the repo can fail on `pip install`. The
+> `elevenlabs` package ships a ~134-character generated filename that pushes the
+> path past the 260-char `MAX_PATH` limit. Either enable long-path support or
+> create the venv at a short path (e.g. `python -m venv C:\venvs\narrateme`).
 
 Run:
 ```bash
 uvicorn app.main:app --reload --port 8000
+```
+
+Tests (no API key needed — all upstream calls are mocked):
+```bash
+cd backend && pytest tests -q
 ```
 
 ### Frontend

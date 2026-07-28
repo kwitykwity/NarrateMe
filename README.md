@@ -30,7 +30,7 @@ NarrateMe helps teachers and parents of kids in grades 1–3 turn any plain writ
 - Content safety guardrails — softens mature content for young readers or blocks unsuitable stories
 - Backend hardening — request timeouts (60s scenes / 120s images / 60s narration), structured logging, API-key validation, `504` on timeout
 
-**Known gap:** OpenAI's per-image latency is highly variable (~40s nominal, but can climb past the 120s backend timeout under throttling). Generation is now concurrent (capped at 3), so total time scales with the slowest image rather than the sum; a slow outlier returns `504`, after which the frontend retries once and, if that also fails, shows a per-scene error card.
+**Known gap:** OpenAI's per-image latency is highly variable (~40s nominal, but can climb past the 120s backend timeout under throttling). Generation is concurrent (capped at 2 in flight), so total time scales with the slowest image rather than the sum; a slow outlier returns `504`, after which the frontend retries once and, if that also fails, shows a per-scene error card.
 
 ---
 
@@ -49,7 +49,7 @@ NarrateMe helps teachers and parents of kids in grades 1–3 turn any plain writ
 
 1. **Input** — User pastes or types a story into a text box. No login required.
 2. **Scene splitting** — An LLM (Claude/GPT) splits the story into 3–5 scenes (beginning/middle/end structure) and outputs structured JSON, including a persistent character description reused across every scene.
-3. **Illustration** — DALL-E 3 generates one illustration per scene, using the shared character description to keep the character visually consistent.
+3. **Illustration** — an OpenAI image model (`gpt-image-2`) generates one illustration per scene, using the shared character description to keep the character visually consistent.
 4. **Narration** — ElevenLabs generates narration audio per scene using a warm voice ("Sarah") suited to early readers, returned as a base64 MP3 and played inline on each scene card.
 5. **Playback** — A presentation player shows each scene's illustration alongside its text and a narration audio player, with word-by-word highlighting synced to narration. An owl avatar narrator reacts with emotion-based expressions. "Play story" mode auto-advances through all scenes hands-free.
 6. **Engagement** — 2–3 engagement prompts per story turn passive listeners into active participants: sound cues before scenes, reading prompts and comprehension checks after scenes.
@@ -202,7 +202,7 @@ CORS errors in the browser console.
 
 ## Known Risk
 
-**Character consistency across scenes** — DALL-E-generated illustrations may drift in the character's appearance between scenes. Mitigation for this build is a strong, persistent character-description prompt reused in every image generation call — not a technical/model-level fix. This is flagged as future work rather than solved in the 2-week build.
+**Character consistency across scenes** — generated illustrations may drift in the character's appearance between scenes. Mitigation for this build is a strong, persistent character-description prompt reused in every image generation call — not a technical/model-level fix. This is flagged as future work rather than solved in the 2-week build.
 
 ---
 
