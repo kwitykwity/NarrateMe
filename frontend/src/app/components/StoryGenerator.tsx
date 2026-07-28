@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface StoryGeneratorProps {
   sectionRef?: React.RefObject<HTMLDivElement | null>;
@@ -36,6 +37,7 @@ export default function StoryGenerator({ sectionRef }: StoryGeneratorProps) {
   const [contentLevel, setContentLevel] = useState<ContentLevel>("moderate");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const router = useRouter();
 
   const charCount = story.trim().length;
   const isValid = charCount >= 50;
@@ -51,10 +53,12 @@ export default function StoryGenerator({ sectionRef }: StoryGeneratorProps) {
 
     setIsLoading(true);
 
-    // Save story and content level to sessionStorage and navigate to presentation
+    // Save story and content level to sessionStorage, then navigate. router.push
+    // keeps this a client-side transition; window.location.href tore down and
+    // re-downloaded the whole app on every story.
     sessionStorage.setItem("narrateme:story", story.trim());
     sessionStorage.setItem("narrateme:contentLevel", contentLevel);
-    window.location.href = "/presentation";
+    router.push("/presentation");
   };
 
   const loadSample = (text: string) => {
