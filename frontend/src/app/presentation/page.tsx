@@ -484,6 +484,7 @@ function PresentationContent() {
   const totalScenes = scenesData.scenes.length;
   const imagesLoaded = scenesData.scenes.filter((s) => s.image_url).length;
   const audioLoaded = scenesData.scenes.filter((s) => s.audio_url).length;
+  const allImagesReady = imagesLoaded === totalScenes;
 
   // Read-along toggle. Starting/stopping is a user gesture, which satisfies
   // the browser autoplay policy for the subsequent auto-advanced clips.
@@ -585,7 +586,7 @@ function PresentationContent() {
               {audioLoaded}/{totalScenes})...
             </span>
           </div>
-          {imagesLoaded < totalScenes && (
+          {!allImagesReady && (
             <span className="text-xs text-zinc-400 dark:text-zinc-500">
               Play will be available once all images are ready
             </span>
@@ -660,7 +661,12 @@ function PresentationContent() {
 
           {/* Narration */}
           <div className="mt-4">
-            {scene.audio_url ? (
+            {!allImagesReady ? (
+              <div className="flex items-center gap-2 text-sm text-zinc-400">
+                <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                <span>Waiting for all images to generate...</span>
+              </div>
+            ) : scene.audio_url ? (
               <audio
                 key={scene.scene_number}
                 ref={audioRef}
@@ -709,7 +715,7 @@ function PresentationContent() {
       <div className="mt-6 flex justify-center">
         <button
           onClick={toggleReadAlong}
-          disabled={imagesLoaded < totalScenes || audioLoaded === 0}
+          disabled={!allImagesReady || audioLoaded === 0}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {autoAdvance ? (
@@ -729,7 +735,7 @@ function PresentationContent() {
       <div className="mt-6 flex items-center justify-between">
         <button
           onClick={() => goToScene((c) => c - 1)}
-          disabled={currentScene === 0}
+          disabled={!allImagesReady || currentScene === 0}
           className="px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Previous
@@ -741,7 +747,7 @@ function PresentationContent() {
 
         <button
           onClick={() => goToScene((c) => c + 1)}
-          disabled={currentScene === totalScenes - 1}
+          disabled={!allImagesReady || currentScene === totalScenes - 1}
           className="px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Next
