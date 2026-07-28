@@ -577,12 +577,19 @@ function PresentationContent() {
       )}
 
       {status === "generating" && (
-        <div className="mb-6 flex items-center justify-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-          <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-          <span>
-            Generating images ({imagesLoaded}/{totalScenes}) and narration (
-            {audioLoaded}/{totalScenes})...
-          </span>
+        <div className="mb-6 flex flex-col items-center gap-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <div className="flex items-center gap-2">
+            <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+            <span>
+              Generating images ({imagesLoaded}/{totalScenes}) and narration (
+              {audioLoaded}/{totalScenes})...
+            </span>
+          </div>
+          {imagesLoaded < totalScenes && (
+            <span className="text-xs text-zinc-400 dark:text-zinc-500">
+              Play will be available once all images are ready
+            </span>
+          )}
         </div>
       )}
 
@@ -702,7 +709,7 @@ function PresentationContent() {
       <div className="mt-6 flex justify-center">
         <button
           onClick={toggleReadAlong}
-          disabled={audioLoaded === 0}
+          disabled={imagesLoaded < totalScenes || audioLoaded === 0}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {autoAdvance ? (
