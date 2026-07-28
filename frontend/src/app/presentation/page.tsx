@@ -181,6 +181,14 @@ function PresentationContent() {
     }
   }, [currentScene, scenesData]);
 
+  // Ensure audio is always paused when any prompt is showing.
+  // This catches edge cases where audio might still be playing.
+  useEffect(() => {
+    if (showingPrompt) {
+      audioRef.current?.pause();
+    }
+  }, [showingPrompt]);
+
   useEffect(() => {
     if (!story) return;
 
@@ -531,11 +539,18 @@ function PresentationContent() {
     setCurrentWordIndex(idx);
   };
 
-  // Handle dismissing an engagement prompt. If we were in auto-advance mode,
-  // continue to the next scene after the prompt is dismissed.
+  // Handle dismissing an engagement prompt.
+  // - For "before" prompts: Start playing the current scene's audio
+  // - For "after" prompts with autoAdvance: Advance to next scene
   const handlePromptDismiss = () => {
+    const engagement = scene?.engagement;
     setShowingPrompt(false);
-    if (pendingAdvance) {
+
+    if (engagement?.timing === "before") {
+      // "Before" prompts block audio until dismissed - now play it
+      audioRef.current?.play().catch(() => {});
+    } else if (pendingAdvance) {
+      // "After" prompts with autoAdvance - advance to next scene
       setPendingAdvance(false);
       if (currentScene < totalScenes - 1) {
         setCurrentScene((c) => c + 1);
