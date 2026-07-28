@@ -164,7 +164,8 @@ function PresentationContent() {
   // Track which scenes have shown their "before" prompt to avoid re-showing
   const shownBeforePrompts = useRef<Set<number>>(new Set());
 
-  // Check for "before" engagement prompts when scene changes
+  // Check for "before" engagement prompts when scene changes.
+  // Pause any playing audio immediately when showing a prompt.
   useEffect(() => {
     if (!scenesData) return;
     const engagement = scenesData.scenes[currentScene]?.engagement;
@@ -173,6 +174,9 @@ function PresentationContent() {
       !shownBeforePrompts.current.has(currentScene)
     ) {
       shownBeforePrompts.current.add(currentScene);
+      // Pause audio immediately - the state update won't take effect until next render,
+      // so we need to pause directly to prevent audio playing behind the prompt.
+      audioRef.current?.pause();
       setShowingPrompt(true);
     }
   }, [currentScene, scenesData]);
@@ -374,15 +378,23 @@ function PresentationContent() {
   // narration is ready, play it. Changing scene (or a newly-arrived audio URL)
   // re-triggers this so the next clip starts automatically.
   // Don't play while an engagement prompt is showing - wait for it to be dismissed.
+  // Also check for unseen "before" prompts directly (not just state) to handle
+  // the race condition where both effects run in the same render cycle.
   const currentAudioUrl = scenesData?.scenes[currentScene]?.audio_url;
   useEffect(() => {
     if (!autoAdvance || showingPrompt) return;
+    // Check if this scene has a "before" prompt we haven't shown yet
+    const engagement = scenesData?.scenes[currentScene]?.engagement;
+    const hasUnseenBeforePrompt =
+      engagement?.timing === "before" &&
+      !shownBeforePrompts.current.has(currentScene);
+    if (hasUnseenBeforePrompt) return;
     const el = audioRef.current;
     if (el && currentAudioUrl) {
       // Autoplay can be rejected without a prior user gesture; ignore it.
       el.play().catch(() => {});
     }
-  }, [autoAdvance, currentScene, currentAudioUrl, showingPrompt]);
+  }, [autoAdvance, currentScene, currentAudioUrl, showingPrompt, scenesData]);
 
   // Reapply the remembered volume/mute to the freshly-mounted audio element so
   // the reader's setting carries across scenes instead of resetting to full.
