@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import {
   CONTENT_LEVELS,
   ContentLevel,
@@ -20,9 +21,17 @@ const emptySubscribe = () => () => {};
  * flipping their own safety level, which is exactly what could happen while the
  * content control sat next to the story box. No accounts, no passwords, nothing
  * leaves the browser.
+ *
+ * Opened from the profile menu, which owns the trigger, so this component takes
+ * its visibility as props rather than rendering a button of its own.
  */
-export default function ParentSettingsPanel() {
-  const [open, setOpen] = useState(false);
+export default function ParentSettingsDialog({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   const [unlocked, setUnlocked] = useState(false);
   const [pinEntry, setPinEntry] = useState("");
   const [pinError, setPinError] = useState(false);
@@ -34,7 +43,7 @@ export default function ParentSettingsPanel() {
   const pinInputRef = useRef<HTMLInputElement>(null);
 
   const close = () => {
-    setOpen(false);
+    onClose();
     // Re-lock on close so the panel isn't left open for the next person.
     setUnlocked(false);
     setPinEntry("");
@@ -78,19 +87,15 @@ export default function ParentSettingsPanel() {
     saveParentSettings(next);
   };
 
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-full border-2 border-border-fine px-4 py-2 text-sm font-bold text-ink-dark transition-colors hover:border-accent-teal"
-        aria-haspopup="dialog"
-      >
-        <i className="fa-solid fa-shield-halved text-accent-teal" aria-hidden="true"></i>
-        <span className="hidden sm:inline">Parent settings</span>
-      </button>
+  if (!open) return null;
 
-      {open && (
+  // Rendered through a portal rather than in place. The header sets
+  // backdrop-filter, which makes it the containing block for position:fixed
+  // descendants — the overlay resolved to the 76px-tall header instead of the
+  // viewport and pushed the panel off the top of the screen. Portalling to
+  // document.body escapes that containing block.
+  return createPortal(
+    (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
           role="dialog"
@@ -230,8 +235,8 @@ export default function ParentSettingsPanel() {
             )}
           </div>
         </div>
-      )}
-    </>
+    ),
+    document.body
   );
 }
 

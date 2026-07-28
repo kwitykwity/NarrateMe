@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import ParentSettingsPanel from "./ParentSettings";
+import ProfileMenu from "./ProfileMenu";
 
 export default function Header() {
   return (
@@ -29,7 +29,7 @@ export default function Header() {
           <div className="w-1.5 h-1.5 rounded-full bg-accent-yellow animate-pulseDot"></div>
         </nav>
       </div>
-      <ParentSettingsPanel />
+      <ProfileMenu />
     </header>
   );
 }

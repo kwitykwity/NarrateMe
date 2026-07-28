@@ -260,7 +260,7 @@ export default function DemoPlayer() {
 
         <div className="mt-16 text-center">
           <p className="text-accent-teal-soft text-lg font-medium">
-            No account needed. No credit card. Just stories.
+            Free to start. No credit card. Just stories.
           </p>
         </div>
       </div>
