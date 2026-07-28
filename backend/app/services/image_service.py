@@ -6,15 +6,12 @@ from openai import AsyncOpenAI
 logger = logging.getLogger(__name__)
 
 # Image quality/size knobs — the main lever on generation latency. Lower quality
-# and smaller size generate faster (and cheaper) at the cost of detail; "medium"
-# is a balanced default, bump to "high" for final output or "low" for fast demos.
+# and smaller size generate faster (and cheaper) at the cost of detail.
 # Override per-environment without code changes via env vars.
 # gpt-image-2 accepts quality: low | medium | high | auto
 #                    and size: 1024x1024 | 1024x1536 | 1536x1024 | auto
-IMAGE_QUALITY = os.getenv("IMAGE_QUALITY", "medium")
-# 1536x1024 (3:2 landscape) is the default so images match the presentation's
-# 3:2 scene frame edge-to-edge; override for square/portrait via env.
-IMAGE_SIZE = os.getenv("IMAGE_SIZE", "1536x1024")
+IMAGE_QUALITY = os.getenv("IMAGE_QUALITY", "low")
+IMAGE_SIZE = os.getenv("IMAGE_SIZE", "1024x1024")
 
 
 def get_client():
