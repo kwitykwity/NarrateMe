@@ -4,6 +4,10 @@ import { useState, useRef, useCallback } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+// "George" - British mature voice for the wise owl mentor
+// Clearly distinct from narrator's "Sarah" voice (soft female)
+const OWL_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb";
+
 interface UsePromptAudioReturn {
   isLoading: boolean;
   isSpeaking: boolean;
@@ -33,16 +37,22 @@ export function usePromptAudio(): UsePromptAudioReturn {
   const playPrompt = useCallback(async (text: string): Promise<void> => {
     setError(null);
 
-    // Check cache first
-    let audioUrl = audioCache.get(text);
+    // Check cache first (include voice_id in key to avoid mixing voices)
+    const cacheKey = `${OWL_VOICE_ID}:${text}`;
+    let audioUrl = audioCache.get(cacheKey);
+
+    console.log("[usePromptAudio] Playing prompt with OWL voice:", OWL_VOICE_ID);
+    console.log("[usePromptAudio] Cache key:", cacheKey);
+    console.log("[usePromptAudio] Cache hit:", !!audioUrl);
 
     if (!audioUrl) {
       setIsLoading(true);
       try {
+        console.log("[usePromptAudio] Fetching audio from API with voice_id:", OWL_VOICE_ID);
         const response = await fetch(`${API_URL}/api/audio`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ text, voice_id: OWL_VOICE_ID }),
         });
 
         if (!response.ok) {
@@ -54,7 +64,7 @@ export function usePromptAudio(): UsePromptAudioReturn {
 
         // Cache for future use
         if (audioUrl) {
-          audioCache.set(text, audioUrl);
+          audioCache.set(cacheKey, audioUrl);
         }
       } catch (err) {
         setIsLoading(false);
@@ -70,26 +80,32 @@ export function usePromptAudio(): UsePromptAudioReturn {
     }
 
     // Play the audio
+    console.log("[usePromptAudio] Creating audio element with URL length:", audioUrl?.length);
     return new Promise((resolve, reject) => {
       const audio = new Audio(audioUrl);
       audioRef.current = audio;
 
       audio.onplay = () => {
+        console.log("[usePromptAudio] Audio started playing");
         setIsSpeaking(true);
       };
 
       audio.onended = () => {
+        console.log("[usePromptAudio] Audio playback ended - resolving promise");
         setIsSpeaking(false);
         resolve();
       };
 
-      audio.onerror = () => {
+      audio.onerror = (e) => {
+        console.error("[usePromptAudio] Audio error:", e);
         setIsSpeaking(false);
         setError("Failed to play audio");
         reject(new Error("Failed to play audio"));
       };
 
+      console.log("[usePromptAudio] Calling audio.play()...");
       audio.play().catch((err) => {
+        console.error("[usePromptAudio] audio.play() failed:", err);
         setIsSpeaking(false);
         setError("Failed to play audio");
         reject(err);

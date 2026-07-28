@@ -107,17 +107,21 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   }, [clearSilenceTimeout, isListening]);
 
   const startListening = useCallback(() => {
+    console.log("[useSpeechRecognition] startListening called");
     const SpeechRecognitionClass = getSpeechRecognition();
     if (!SpeechRecognitionClass) {
+      console.error("[useSpeechRecognition] Speech recognition not supported");
       setError("Speech recognition not supported");
       return;
     }
 
     // Clean up any existing instance
     if (recognitionRef.current) {
+      console.log("[useSpeechRecognition] Aborting existing recognition instance");
       recognitionRef.current.abort();
     }
 
+    console.log("[useSpeechRecognition] Creating new SpeechRecognition instance");
     const recognition = new SpeechRecognitionClass();
     recognitionRef.current = recognition;
 
@@ -128,6 +132,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
+      console.log("[useSpeechRecognition] Recognition started - listening for speech");
       setIsListening(true);
       setError(null);
       resetSilenceTimeout();
@@ -149,6 +154,8 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
         }
       }
 
+      console.log("[useSpeechRecognition] Result - final:", finalTranscript, "interim:", interim);
+
       if (finalTranscript) {
         setTranscript((prev) => prev + finalTranscript);
       }
@@ -157,6 +164,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
     recognition.onerror = (event) => {
       const errorEvent = event as SpeechRecognitionErrorEvent;
+      console.error("[useSpeechRecognition] Error:", errorEvent.error, errorEvent.message);
       clearSilenceTimeout();
       setIsListening(false);
 
@@ -174,14 +182,17 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     };
 
     recognition.onend = () => {
+      console.log("[useSpeechRecognition] Recognition ended");
       clearSilenceTimeout();
       setIsListening(false);
       setInterimTranscript("");
     };
 
     try {
+      console.log("[useSpeechRecognition] Calling recognition.start()...");
       recognition.start();
     } catch (err) {
+      console.error("[useSpeechRecognition] Failed to start:", err);
       setError("Failed to start speech recognition");
       setIsListening(false);
     }

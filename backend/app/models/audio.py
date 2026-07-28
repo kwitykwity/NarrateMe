@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class AudioRequest(BaseModel):
     text: str
+    voice_id: str | None = None  # Optional voice override (e.g., owl voice)
 
 
 class WordTiming(BaseModel):

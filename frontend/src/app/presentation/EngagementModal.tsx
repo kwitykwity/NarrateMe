@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import OwlAvatar from "./OwlAvatar";
 import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
 import { usePromptAudio } from "../hooks/usePromptAudio";
@@ -33,6 +33,9 @@ export default function EngagementModal({ prompt, onDismiss }: EngagementModalPr
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [isCorrect, setIsCorrect] = useState(false);
   const [showHint, setShowHint] = useState(false);
+
+  // Guard against React Strict Mode double-execution
+  const hasStartedRef = useRef(false);
 
   const { isLoading, isSpeaking, playPrompt, error: audioError } = usePromptAudio();
   const {
@@ -69,25 +72,46 @@ export default function EngagementModal({ prompt, onDismiss }: EngagementModalPr
   };
 
   // Check if this prompt type needs voice interaction
+  // Note: speechSupported may be false on initial render, so we also check directly in startFlow
   const needsListening = prompt.type === "comprehension_check" && speechSupported;
 
   // Start the voice interaction flow when modal mounts
   useEffect(() => {
+    // Guard against React Strict Mode double-execution
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+
     const startFlow = async () => {
+      // Check speech support directly here since speechSupported may not be set yet
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const win = typeof window !== "undefined" ? (window as any) : null;
+      const hasSpeechSupport = !!(win?.SpeechRecognition || win?.webkitSpeechRecognition);
+      const shouldListen = prompt.type === "comprehension_check" && hasSpeechSupport;
+
+      console.log("[EngagementModal] Starting flow");
+      console.log("[EngagementModal] Prompt type:", prompt.type);
+      console.log("[EngagementModal] Speech support:", hasSpeechSupport);
+      console.log("[EngagementModal] Should listen:", shouldListen);
+
       try {
         // Play the prompt audio
+        console.log("[EngagementModal] Playing prompt audio...");
         await playPrompt(prompt.text);
+        console.log("[EngagementModal] Prompt audio finished");
 
         // After speaking, transition to next phase
-        if (needsListening) {
+        if (shouldListen) {
+          console.log("[EngagementModal] Transitioning to listening phase");
           setPhase("listening");
           startListening();
         } else {
+          console.log("[EngagementModal] Transitioning to complete phase (no listening)");
           setPhase("complete");
         }
-      } catch {
+      } catch (err) {
+        console.error("[EngagementModal] Error playing prompt:", err);
         // If TTS fails, skip to appropriate phase
-        if (needsListening) {
+        if (shouldListen) {
           setPhase("listening");
           startListening();
         } else {

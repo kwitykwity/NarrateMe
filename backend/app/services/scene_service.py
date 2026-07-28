@@ -68,9 +68,11 @@ To help children become active listeners rather than passive ones, add engagemen
    - Ask "What do you think happens next?" or similar prediction questions
    - Best placed mid-story where there's natural suspense
 
-3. "comprehension_check" (timing: "after") - Verify understanding with a simple question
-   - Examples: "Who found Max?", "What color was the puppy?"
-   - Include an "answer_hint" field with the answer for the grown-up
+3. "comprehension_check" (timing: "after") - Ask a WHO/WHAT/WHERE question with a simple noun answer
+   - Ask questions that have a single name, object, color, or place as the answer
+   - Good questions: "Who helped Max?", "What color was the ball?", "Where did they go?"
+   - The answer_hint MUST be exactly 1-2 words: a name ("Lily"), color ("red"), object ("the key"), or place ("the park")
+   - NEVER ask questions that require sentence answers like "What happened?" or "Why did he leave?"
 
 You must respond with valid JSON in ONE of these two formats.
 
@@ -116,7 +118,7 @@ If the story is usable (after softening if needed):
         "type": "comprehension_check",
         "timing": "after",
         "text": "Who helped Max find his way?",
-        "answer_hint": "Lily, the kind girl"
+        "answer_hint": "Lily"
       }
     },
     {
@@ -145,7 +147,8 @@ Guidelines (for the non-blocked case):
 - Image prompts should always reference the character's consistent appearance
 - Use a warm, friendly illustration style (e.g., "children's book illustration style, warm colors, friendly")
 - Tag each scene with an "emotion" that captures its dominant emotional tone. You MUST pick exactly one of: "happy", "sad", "excited", "scared", "calm". This drives a narrator owl's facial expression, so choose the tone a child would feel during that scene.
-- Add engagement prompts to 2-3 middle scenes (scenes 2, 3, or 4). Do NOT add prompts to scene 1 or scene 5.""".replace(
+- Add engagement prompts to 2-3 middle scenes (scenes 2, 3, or 4). Do NOT add prompts to scene 1 or scene 5.
+- IMPORTANT: For comprehension_check, only ask WHO/WHAT/WHERE questions that have a simple 1-2 word answer (a name, color, object, or place). Never ask "What happened?" or "Why?" questions.""".replace(
         "{content_safety}", content_safety
     )
 

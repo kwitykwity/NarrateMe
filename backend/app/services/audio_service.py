@@ -64,17 +64,21 @@ def _aggregate_words(characters, starts, ends) -> list[WordTiming]:
 
 
 async def generate_narration(
-    text: str, timeout_seconds: int = 60
+    text: str,
+    timeout_seconds: int = 60,
+    voice_id: str | None = None,
 ) -> tuple[str, list[WordTiming]]:
     logger.info(f"Starting narration generation. Text length: {len(text)} chars")
     logger.debug(f"Narration text: {text[:100]}...")
 
     client = get_client()
+    selected_voice = voice_id or DEFAULT_VOICE_ID
+    logger.debug(f"Using voice_id: {selected_voice}")
 
     async def _call():
         logger.info("Calling ElevenLabs text_to_speech.convert_with_timestamps API...")
         return await client.text_to_speech.convert_with_timestamps(
-            DEFAULT_VOICE_ID,
+            selected_voice,
             text=text,
             model_id=DEFAULT_MODEL_ID,
             output_format=OUTPUT_FORMAT,
