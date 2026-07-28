@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Fragment, useState, useEffect, useRef, useSyncExternalStore } from "react";
 import OwlAvatar from "./OwlAvatar";
 import EngagementModal from "./EngagementModal";
+import { DEFAULT_SETTINGS, loadParentSettings } from "../lib/parentSettings";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -142,7 +143,10 @@ function PresentationContent() {
   // false during SSR and the first hydration render, true once on the client.
   const hydrated = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const story = hydrated ? sessionStorage.getItem("narrateme:story") : null;
-  const contentLevel = hydrated ? sessionStorage.getItem("narrateme:contentLevel") ?? "moderate" : "moderate";
+  // Parent-controlled settings (safety level + playback), set behind the PIN
+  // gate. Read on the client only; defaults stand in during SSR.
+  const parentSettings = hydrated ? loadParentSettings() : DEFAULT_SETTINGS;
+  const contentLevel = parentSettings.contentLevel;
 
   const [status, setStatus] = useState<"loading" | "generating" | "done" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
@@ -159,7 +163,11 @@ function PresentationContent() {
   const [currentScene, setCurrentScene] = useState(0);
   // When true, each scene's narration plays automatically and advances to the
   // next scene when the audio ends (hands-free read-along).
-  const [autoAdvance, setAutoAdvance] = useState(false);
+  // Read-along state. The parent's "play automatically" setting supplies the
+  // starting value and the reader's Play/Pause overrides it, so this is derived
+  // rather than synced from the setting in an effect.
+  const [autoAdvanceOverride, setAutoAdvance] = useState<boolean | null>(null);
+  const autoAdvance = autoAdvanceOverride ?? parentSettings.autoPlay;
   // Index of the word currently being narrated in the active scene (-1 = none),
   // driven by the audio element's timeupdate events.
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
@@ -179,6 +187,8 @@ function PresentationContent() {
   // Pause any playing audio immediately when showing a prompt.
   useEffect(() => {
     if (!scenesData) return;
+    // A grown-up can turn prompts off in Parent settings.
+    if (!parentSettings.engagementPrompts) return;
     const engagement = scenesData.scenes[currentScene]?.engagement;
     if (
       engagement?.timing === "before" &&
@@ -190,7 +200,7 @@ function PresentationContent() {
       audioRef.current?.pause();
       setShowingPrompt(true);
     }
-  }, [currentScene, scenesData]);
+  }, [currentScene, scenesData, parentSettings.engagementPrompts]);
 
   // Ensure audio is always paused when any prompt is showing.
   // This catches edge cases where audio might still be playing.
@@ -418,6 +428,9 @@ function PresentationContent() {
     // Check if this scene has a "before" prompt we haven't shown yet
     const engagement = scenesData?.scenes[currentScene]?.engagement;
     const hasUnseenBeforePrompt =
+      // With prompts switched off none will ever show, so waiting on one here
+      // would stall playback forever.
+      parentSettings.engagementPrompts &&
       engagement?.timing === "before" &&
       !shownBeforePrompts.current.has(currentScene);
     if (hasUnseenBeforePrompt) return;
@@ -426,7 +439,15 @@ function PresentationContent() {
       // Autoplay can be rejected without a prior user gesture; ignore it.
       el.play().catch(() => {});
     }
-  }, [autoAdvance, currentScene, currentAudioUrl, showingPrompt, scenesData]);
+  }, [
+    autoAdvance,
+    currentScene,
+    currentAudioUrl,
+    showingPrompt,
+    scenesData,
+    parentSettings.engagementPrompts,
+  ]);
+
 
   // Reapply the remembered volume/mute to the freshly-mounted audio element so
   // the reader's setting carries across scenes instead of resetting to full.
@@ -567,8 +588,8 @@ function PresentationContent() {
   const handleAudioEnded = () => {
     setCurrentWordIndex(-1);
 
-    // Check for "after" engagement prompt
-    const engagement = scene?.engagement;
+    // Check for "after" engagement prompt (unless a grown-up turned them off)
+    const engagement = parentSettings.engagementPrompts ? scene?.engagement : undefined;
     if (engagement?.timing === "after") {
       setShowingPrompt(true);
       if (autoAdvance) {

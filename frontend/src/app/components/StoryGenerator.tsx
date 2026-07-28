@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  CONTENT_LEVELS,
+  ContentLevel,
+  DEFAULT_SETTINGS,
+  loadParentSettings,
+} from "../lib/parentSettings";
 
 interface StoryGeneratorProps {
   sectionRef?: React.RefObject<HTMLDivElement | null>;
@@ -24,20 +30,34 @@ const SAMPLE_STORIES = [
   },
 ];
 
-type ContentLevel = "strict" | "moderate" | "original";
-
-const CONTENT_LEVELS: { value: ContentLevel; label: string; description: string }[] = [
-  { value: "strict", label: "Strict", description: "Block any mature themes" },
-  { value: "moderate", label: "Moderate", description: "Soften mature content (recommended)" },
-  { value: "original", label: "Original", description: "Keep story as written" },
-];
-
 export default function StoryGenerator({ sectionRef }: StoryGeneratorProps) {
   const [story, setStory] = useState("");
-  const [contentLevel, setContentLevel] = useState<ContentLevel>("moderate");
+  // The content level is a parent setting now, read here rather than chosen.
+  // localStorage is client-only, so it loads after mount; the default matches
+  // the stored default so the first paint isn't wrong.
+  const [contentLevel, setContentLevel] = useState<ContentLevel>(
+    DEFAULT_SETTINGS.contentLevel
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
+
+  // Pick up the parent's saved level, and re-read it when they close the
+  // settings panel (storage events cover other tabs; the custom event covers
+  // this one, since a tab doesn't hear its own storage writes).
+  useEffect(() => {
+    const sync = () => setContentLevel(loadParentSettings().contentLevel);
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener("narrateme:settings-changed", sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("narrateme:settings-changed", sync);
+    };
+  }, []);
+
+  const activeLevel =
+    CONTENT_LEVELS.find((l) => l.value === contentLevel) ?? CONTENT_LEVELS[1];
 
   const charCount = story.trim().length;
   const isValid = charCount >= 50;
@@ -53,11 +73,11 @@ export default function StoryGenerator({ sectionRef }: StoryGeneratorProps) {
 
     setIsLoading(true);
 
-    // Save story and content level to sessionStorage, then navigate. router.push
-    // keeps this a client-side transition; window.location.href tore down and
-    // re-downloaded the whole app on every story.
+    // Save the story, then navigate. router.push keeps this a client-side
+    // transition; window.location.href tore down and re-downloaded the whole
+    // app on every story. The safety level comes from the parent settings the
+    // player reads directly, so it isn't passed along here.
     sessionStorage.setItem("narrateme:story", story.trim());
-    sessionStorage.setItem("narrateme:contentLevel", contentLevel);
     router.push("/presentation");
   };
 
@@ -119,30 +139,16 @@ export default function StoryGenerator({ sectionRef }: StoryGeneratorProps) {
               />
             </div>
 
-            {/* Content Level Selector */}
-            <div>
-              <label className="block text-base font-bold text-ink-dark mb-2">
-                <i className="fa-solid fa-shield-halved text-accent-teal mr-2"></i>
-                Content Level (Parent Control)
-              </label>
-              <div className="flex flex-wrap gap-3">
-                {CONTENT_LEVELS.map((level) => (
-                  <button
-                    key={level.value}
-                    type="button"
-                    onClick={() => setContentLevel(level.value)}
-                    disabled={isLoading}
-                    className={`flex-1 min-w-[140px] px-4 py-3 rounded-xl border-2 text-left transition-all ${
-                      contentLevel === level.value
-                        ? "border-accent-teal bg-accent-teal-soft"
-                        : "border-border-fine bg-surface-base hover:border-accent-teal/50"
-                    } disabled:opacity-50`}
-                  >
-                    <div className="font-bold text-ink-dark">{level.label}</div>
-                    <div className="text-xs text-gray-500">{level.description}</div>
-                  </button>
-                ))}
-              </div>
+            {/* Current safety level, read-only: changing it lives behind the
+                parent PIN, so a young reader can't lift their own limits. */}
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <i className="fa-solid fa-shield-halved text-accent-teal" aria-hidden="true"></i>
+              <span>
+                Safety level:{" "}
+                <span className="font-bold text-ink-dark">{activeLevel.label}</span> —{" "}
+                {activeLevel.description.toLowerCase()}
+              </span>
+              <i className="fa-solid fa-lock text-xs text-gray-400" aria-hidden="true" title="Set by a grown-up in Parent settings"></i>
             </div>
 
             {/* Error Banner */}
