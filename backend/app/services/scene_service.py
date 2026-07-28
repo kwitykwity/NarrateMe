@@ -20,15 +20,38 @@ def get_client():
     logger.debug("Anthropic client initialized")
     return AsyncAnthropic(api_key=api_key)
 
-SYSTEM_PROMPT = """You are a children's story editor specializing in creating illustrated storybooks for kids in grades 1-3.
+CONTENT_SAFETY_STRICT = """CONTENT SAFETY (highest priority — the result is narrated aloud to young children):
+The audience is children in grades 1-3. Apply a STRICT standard:
+- BLOCK any content containing: death, killing, violence, weapons, scary situations, villains, predators, conflict, sadness, fear, or any mature themes.
+- Only allow purely positive, happy, and gentle stories with no conflict or tension.
+- If the story contains ANY of the above themes, do NOT produce scenes. Instead return the blocked response below."""
 
-Your task is to split a story into exactly 5 scenes suitable for an illustrated presentation. Each scene should be a natural narrative beat, together forming a beginning, middle, and end.
-
-CONTENT SAFETY (highest priority — the result is narrated aloud to young children):
+CONTENT_SAFETY_MODERATE = """CONTENT SAFETY (highest priority — the result is narrated aloud to young children):
 The audience is children in grades 1-3. Many classic stories (e.g. Aesop's fables) carry good morals but contain mature details — death, killing, violence, cruelty, or evil. Apply a MODERATE standard:
 - SOFTEN salvageable content: gently rewrite mature moments into age-appropriate outcomes while preserving the story's arc and its moral. For example, a character who dies "goes away" or "is never seen again"; a predator "chases off" or "scares" rather than kills or eats; violence becomes a narrow escape or a lesson learned. Mild peril or sadness is fine when it resolves positively.
 - Keep the moral and the shape of the story intact — adapt wording, don't invent a different story.
-- BLOCK truly unsuitable input: if a story is fundamentally inappropriate for young children (graphic or gory violence, cruelty or torture, sexual content, hate, or self-harm) and cannot be faithfully softened while staying true to it, do NOT produce scenes. Instead return the blocked response below.
+- BLOCK truly unsuitable input: if a story is fundamentally inappropriate for young children (graphic or gory violence, cruelty or torture, sexual content, hate, or self-harm) and cannot be faithfully softened while staying true to it, do NOT produce scenes. Instead return the blocked response below."""
+
+CONTENT_SAFETY_ORIGINAL = """CONTENT SAFETY:
+Preserve the original story exactly as written. Do not soften, censor, or modify any content.
+- Keep all original wording, themes, and events intact.
+- Do not block any stories - process all content as-is.
+- Note: Image prompts should still be appropriate for illustration (no graphic imagery)."""
+
+
+def get_system_prompt(content_level: str) -> str:
+    """Build the system prompt based on content level."""
+    content_safety = {
+        "strict": CONTENT_SAFETY_STRICT,
+        "moderate": CONTENT_SAFETY_MODERATE,
+        "original": CONTENT_SAFETY_ORIGINAL,
+    }.get(content_level, CONTENT_SAFETY_MODERATE)
+
+    return f"""You are a children's story editor specializing in creating illustrated storybooks for kids in grades 1-3.
+
+Your task is to split a story into exactly 5 scenes suitable for an illustrated presentation. Each scene should be a natural narrative beat, together forming a beginning, middle, and end.
+
+{content_safety}
 
 ENGAGEMENT PROMPTS (for active listening):
 To help children become active listeners rather than passive ones, add engagement prompts to 2-3 scenes (NOT the first or last scene). Choose from these types:
@@ -121,10 +144,11 @@ Guidelines (for the non-blocked case):
 - Add engagement prompts to 2-3 middle scenes (scenes 2, 3, or 4). Do NOT add prompts to scene 1 or scene 5."""
 
 
-async def split_story_into_scenes(story: str, timeout_seconds: int = 60) -> SceneResponse:
-    logger.info(f"Starting scene splitting. Story length: {len(story)} chars")
+async def split_story_into_scenes(story: str, timeout_seconds: int = 60, content_level: str = "moderate") -> SceneResponse:
+    logger.info(f"Starting scene splitting. Story length: {len(story)} chars, content_level: {content_level}")
 
     client = get_client()
+    system_prompt = get_system_prompt(content_level)
 
     try:
         logger.info("Calling Anthropic messages.create API...")
@@ -132,7 +156,7 @@ async def split_story_into_scenes(story: str, timeout_seconds: int = 60) -> Scen
             client.messages.create(
                 model="claude-sonnet-5",
                 max_tokens=4096,
-                system=SYSTEM_PROMPT,
+                system=system_prompt,
                 messages=[
                     {
                         "role": "user",

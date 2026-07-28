@@ -17,7 +17,7 @@ async def create_scenes(request: StoryRequest):
         raise HTTPException(status_code=400, detail="Story must be at least 50 characters")
 
     try:
-        scenes = await split_story_into_scenes(request.story)
+        scenes = await split_story_into_scenes(request.story, content_level=request.content_level)
         if scenes.blocked:
             # Not an error: the story was intentionally withheld by the
             # content-safety guardrail. Return 200 with the blocked flag so the

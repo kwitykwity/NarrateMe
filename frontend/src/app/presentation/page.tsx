@@ -136,6 +136,7 @@ function PresentationContent() {
   // false during SSR and the first hydration render, true once on the client.
   const hydrated = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const story = hydrated ? sessionStorage.getItem("narrateme:story") : null;
+  const contentLevel = hydrated ? sessionStorage.getItem("narrateme:contentLevel") ?? "moderate" : "moderate";
 
   const [status, setStatus] = useState<"loading" | "generating" | "done" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
@@ -210,7 +211,7 @@ function PresentationContent() {
         const scenesRes = await fetch(`${API_URL}/api/scenes`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ story }),
+          body: JSON.stringify({ story, content_level: contentLevel }),
           signal: controller.signal,
         });
 
@@ -380,7 +381,7 @@ function PresentationContent() {
       cancelled = true;
       controller.abort();
     };
-  }, [story]);
+  }, [story, contentLevel]);
 
   // Drive the read-along: when auto-advance is on and the current scene's
   // narration is ready, play it. Changing scene (or a newly-arrived audio URL)

@@ -12,8 +12,21 @@ VALID_ENGAGEMENT_TYPES = {"reading_prompt", "sound_cue", "comprehension_check"}
 VALID_TIMINGS = {"before", "after"}
 
 
+VALID_CONTENT_LEVELS = {"strict", "moderate", "original"}
+DEFAULT_CONTENT_LEVEL = "moderate"
+
+
 class StoryRequest(BaseModel):
     story: str
+    content_level: str = DEFAULT_CONTENT_LEVEL
+
+    @field_validator("content_level", mode="before")
+    @classmethod
+    def normalize_content_level(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return DEFAULT_CONTENT_LEVEL
+        normalized = value.strip().lower()
+        return normalized if normalized in VALID_CONTENT_LEVELS else DEFAULT_CONTENT_LEVEL
 
 
 class EngagementPrompt(BaseModel):

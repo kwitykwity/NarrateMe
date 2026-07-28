@@ -23,8 +23,17 @@ const SAMPLE_STORIES = [
   },
 ];
 
+type ContentLevel = "strict" | "moderate" | "original";
+
+const CONTENT_LEVELS: { value: ContentLevel; label: string; description: string }[] = [
+  { value: "strict", label: "Strict", description: "Block any mature themes" },
+  { value: "moderate", label: "Moderate", description: "Soften mature content (recommended)" },
+  { value: "original", label: "Original", description: "Keep story as written" },
+];
+
 export default function StoryGenerator({ sectionRef }: StoryGeneratorProps) {
   const [story, setStory] = useState("");
+  const [contentLevel, setContentLevel] = useState<ContentLevel>("moderate");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -42,8 +51,9 @@ export default function StoryGenerator({ sectionRef }: StoryGeneratorProps) {
 
     setIsLoading(true);
 
-    // Save story to sessionStorage and navigate to presentation
+    // Save story and content level to sessionStorage and navigate to presentation
     sessionStorage.setItem("narrateme:story", story.trim());
+    sessionStorage.setItem("narrateme:contentLevel", contentLevel);
     window.location.href = "/presentation";
   };
 
@@ -103,6 +113,32 @@ export default function StoryGenerator({ sectionRef }: StoryGeneratorProps) {
                 disabled={isLoading}
                 className="w-full rounded-2xl border-2 border-border-fine bg-surface-base px-5 py-4 text-ink-dark placeholder-gray-400 focus:border-accent-teal focus:ring-4 focus:ring-accent-teal-soft outline-none transition-all resize-none text-lg leading-relaxed disabled:opacity-50"
               />
+            </div>
+
+            {/* Content Level Selector */}
+            <div>
+              <label className="block text-base font-bold text-ink-dark mb-2">
+                <i className="fa-solid fa-shield-halved text-accent-teal mr-2"></i>
+                Content Level (Parent Control)
+              </label>
+              <div className="flex flex-wrap gap-3">
+                {CONTENT_LEVELS.map((level) => (
+                  <button
+                    key={level.value}
+                    type="button"
+                    onClick={() => setContentLevel(level.value)}
+                    disabled={isLoading}
+                    className={`flex-1 min-w-[140px] px-4 py-3 rounded-xl border-2 text-left transition-all ${
+                      contentLevel === level.value
+                        ? "border-accent-teal bg-accent-teal-soft"
+                        : "border-border-fine bg-surface-base hover:border-accent-teal/50"
+                    } disabled:opacity-50`}
+                  >
+                    <div className="font-bold text-ink-dark">{level.label}</div>
+                    <div className="text-xs text-gray-500">{level.description}</div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Error Banner */}
