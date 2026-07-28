@@ -23,8 +23,25 @@ softened. The verdict surfaces as `blocked` / `block_reason` on the scene respon
 
 ## Status
 
-⚠️ **Not yet executed** — no API key on local machine. The guardrail is enforced inside
-the Claude call, so there is no offline path to exercise it. Run against a staging/prod
-key before the next release.
+**Contract: verified offline.** `backend/tests/test_content_safety_contract.py` runs all
+three cases above through `POST /api/scenes` with the Claude call mocked, so no API key is
+needed. It pins the response *shape* each verdict must produce — in particular that a block
+returns **200** (not an error status) with `block_reason` and an empty `scenes` list, since
+an error status would send the frontend down its failure path and into the backup story
+instead of showing the notice.
+
+```bash
+cd backend && pytest tests/test_content_safety_contract.py
+```
+
+⚠️ **Model judgment: still pending a live key.** The mocks assert that *our* pipeline
+surfaces each verdict correctly; they cannot tell us whether Claude actually softens a
+fable's death or actually blocks gore. That call still has to be exercised against a
+staging/prod key before release — the offline suite only guarantees a regression in
+parsing, status codes, or response shape can't ship silently in between.
+
+**Frontend:** the block verdict is rendered as a gentle notice on the presentation page
+(`frontend/src/app/presentation/page.tsx`). Before that was wired up, a blocked story
+dereferenced an undefined scene and crashed the player.
 
 **Owner:** Erasmo Concepcion
