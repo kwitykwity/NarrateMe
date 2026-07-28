@@ -47,7 +47,11 @@ def get_system_prompt(content_level: str) -> str:
         "original": CONTENT_SAFETY_ORIGINAL,
     }.get(content_level, CONTENT_SAFETY_MODERATE)
 
-    return f"""You are a children's story editor specializing in creating illustrated storybooks for kids in grades 1-3.
+    # NOT an f-string: the prompt embeds literal JSON examples, whose braces an
+    # f-string would parse as format expressions (raising ValueError at runtime).
+    # The single placeholder is substituted with str.replace, which treats the
+    # surrounding braces as plain text.
+    return """You are a children's story editor specializing in creating illustrated storybooks for kids in grades 1-3.
 
 Your task is to split a story into exactly 5 scenes suitable for an illustrated presentation. Each scene should be a natural narrative beat, together forming a beginning, middle, and end.
 
@@ -141,7 +145,9 @@ Guidelines (for the non-blocked case):
 - Image prompts should always reference the character's consistent appearance
 - Use a warm, friendly illustration style (e.g., "children's book illustration style, warm colors, friendly")
 - Tag each scene with an "emotion" that captures its dominant emotional tone. You MUST pick exactly one of: "happy", "sad", "excited", "scared", "calm". This drives a narrator owl's facial expression, so choose the tone a child would feel during that scene.
-- Add engagement prompts to 2-3 middle scenes (scenes 2, 3, or 4). Do NOT add prompts to scene 1 or scene 5."""
+- Add engagement prompts to 2-3 middle scenes (scenes 2, 3, or 4). Do NOT add prompts to scene 1 or scene 5.""".replace(
+        "{content_safety}", content_safety
+    )
 
 
 async def split_story_into_scenes(story: str, timeout_seconds: int = 60, content_level: str = "moderate") -> SceneResponse:
@@ -180,6 +186,16 @@ async def split_story_into_scenes(story: str, timeout_seconds: int = 60, content
             raise ValueError("No text content in scene response from Claude")
         logger.debug(f"Response text length: {len(response_text)} chars")
 
+        # A response cut off at max_tokens yields unterminated JSON. Detect it
+        # here so the failure is reported as truncation rather than surfacing as
+        # a generic parse error further down.
+        truncated = message.stop_reason == "max_tokens"
+        if truncated:
+            logger.error(
+                "Anthropic response hit max_tokens (%s); scene JSON is truncated",
+                message.usage.output_tokens if message.usage else "unknown",
+            )
+
         # Parse JSON from response
         try:
             data = json.loads(response_text)
@@ -190,11 +206,32 @@ async def split_story_into_scenes(story: str, timeout_seconds: int = 60, content
             start = response_text.find("{")
             end = response_text.rfind("}") + 1
             if start != -1 and end > start:
-                data = json.loads(response_text[start:end])
-                logger.info("JSON extracted and parsed successfully")
+                # Truncation leaves a trailing "}" from the last complete inner
+                # object, so this slice can still be invalid JSON. Without its
+                # own guard the retry raises JSONDecodeError from inside this
+                # handler, escaping the ValueError contract the API layer maps
+                # to a 503 and surfacing as an opaque 500 instead.
+                try:
+                    data = json.loads(response_text[start:end])
+                    logger.info("JSON extracted and parsed successfully")
+                except json.JSONDecodeError as extract_error:
+                    logger.error(
+                        "Failed to parse extracted JSON (%s): %s...",
+                        extract_error,
+                        response_text[:200],
+                    )
+                    raise ValueError(
+                        "Scene response from Claude was truncated"
+                        if truncated
+                        else "Failed to parse scene response from Claude"
+                    ) from extract_error
             else:
                 logger.error(f"Failed to extract JSON from response: {response_text[:200]}...")
-                raise ValueError("Failed to parse scene response from Claude")
+                raise ValueError(
+                    "Scene response from Claude was truncated"
+                    if truncated
+                    else "Failed to parse scene response from Claude"
+                ) from e
 
         if data.get("blocked"):
             logger.info("Story blocked by content-safety guardrail")
