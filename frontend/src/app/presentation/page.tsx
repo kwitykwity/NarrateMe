@@ -91,6 +91,12 @@ const AUDIO_RETRY_BACKOFF_MS = 0;
 interface ScenesData {
   character_description: string;
   scenes: Scene[];
+  // Content-safety guardrail verdict from /api/scenes. When the story is too
+  // intense to soften for young readers the backend returns 200 with
+  // blocked: true, an empty scenes list, and a kid-safe explanation for the
+  // grown-up in block_reason.
+  blocked?: boolean;
+  block_reason?: string;
 }
 
 // Shape of the pre-baked backup manifest at /public/demo-story.json. Its scenes
@@ -141,6 +147,10 @@ function PresentationContent() {
   const [status, setStatus] = useState<"loading" | "generating" | "done" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
   const [scenesData, setScenesData] = useState<ScenesData | null>(null);
+  // Set when the content-safety guardrail withholds the story. Holds the
+  // grown-up-facing reason so we can show a gentle notice instead of a
+  // presentation (the response carries no scenes to render).
+  const [blockReason, setBlockReason] = useState<string | null>(null);
   const [usedBackupStory, setUsedBackupStory] = useState(false);
   const [liveGenerationStatus, setLiveGenerationStatus] = useState<"checking" | "ready" | "limited">("checking");
   // True once we've fallen back to the pre-baked backup story instead of live
@@ -221,6 +231,19 @@ function PresentationContent() {
 
         const data: ScenesData = await scenesRes.json();
         if (cancelled) return;
+
+        // Content-safety guardrail withheld the story: a 200 carrying no scenes.
+        // Show the notice instead of generating (and instead of falling back to
+        // the backup story — the block is a deliberate verdict, not a failure).
+        if (data.blocked) {
+          setBlockReason(
+            data.block_reason?.trim() ||
+              "This story isn't a good fit for young readers. Try a gentler one."
+          );
+          setStatus("done");
+          return;
+        }
+
         setScenesData(data);
         setStatus("generating");
 
@@ -470,6 +493,27 @@ function PresentationContent() {
     );
   }
 
+  // Content-safety guardrail withheld the story. There are no scenes to play,
+  // so this replaces the presentation with a gentle explanation for the adult.
+  if (blockReason) {
+    return (
+      <div className="w-full max-w-xl">
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-8 text-center dark:border-amber-700 dark:bg-amber-950">
+          <p className="mb-2 text-lg font-semibold text-amber-800 dark:text-amber-300">
+            Let&apos;s pick a different story
+          </p>
+          <p className="mb-6 text-amber-700 dark:text-amber-400">{blockReason}</p>
+          <Link
+            href="/"
+            className="inline-block rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
+          >
+            Try another story
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (status === "loading" || !scenesData) {
     return (
       <div className="w-full max-w-3xl">
@@ -477,6 +521,23 @@ function PresentationContent() {
           <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
           <p className="text-zinc-600 dark:text-zinc-400">Splitting story into scenes...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Defense in depth: every render path below dereferences `scene` directly, so
+  // an empty scene list would throw. The guardrail path above already handles
+  // the known case (blocked stories return no scenes); this catches any other
+  // way an empty list could reach here rather than crashing the player.
+  if (scenesData.scenes.length === 0) {
+    return (
+      <div className="text-center">
+        <p className="mb-4 text-zinc-600 dark:text-zinc-400">
+          This story didn&apos;t produce any scenes.
+        </p>
+        <Link href="/" className="text-blue-600 hover:underline dark:text-blue-400">
+          Try another story
+        </Link>
       </div>
     );
   }
