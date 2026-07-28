@@ -373,15 +373,16 @@ function PresentationContent() {
   // Drive the read-along: when auto-advance is on and the current scene's
   // narration is ready, play it. Changing scene (or a newly-arrived audio URL)
   // re-triggers this so the next clip starts automatically.
+  // Don't play while an engagement prompt is showing - wait for it to be dismissed.
   const currentAudioUrl = scenesData?.scenes[currentScene]?.audio_url;
   useEffect(() => {
-    if (!autoAdvance) return;
+    if (!autoAdvance || showingPrompt) return;
     const el = audioRef.current;
     if (el && currentAudioUrl) {
       // Autoplay can be rejected without a prior user gesture; ignore it.
       el.play().catch(() => {});
     }
-  }, [autoAdvance, currentScene, currentAudioUrl]);
+  }, [autoAdvance, currentScene, currentAudioUrl, showingPrompt]);
 
   // Reapply the remembered volume/mute to the freshly-mounted audio element so
   // the reader's setting carries across scenes instead of resetting to full.

@@ -131,7 +131,7 @@ async def split_story_into_scenes(story: str, timeout_seconds: int = 60) -> Scen
         message = await asyncio.wait_for(
             client.messages.create(
                 model="claude-sonnet-5",
-                max_tokens=2048,
+                max_tokens=4096,
                 system=SYSTEM_PROMPT,
                 messages=[
                     {
