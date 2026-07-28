@@ -29,15 +29,21 @@ const DEFAULT_EMOTION = "calm";
 export default function OwlAvatar({
   emotion,
   speaking = false,
+  listening = false,
   className = "",
 }: {
   emotion?: string;
   // True while the current scene's narration is playing; drives the "talking"
   // bob so the owl looks like it's speaking along with the audio.
   speaking?: boolean;
+  // True while listening for user's verbal response; drives a pulsing glow.
+  listening?: boolean;
   className?: string;
 }) {
   const resolved = emotion && OWL_EMOTIONS.includes(emotion) ? emotion : DEFAULT_EMOTION;
+
+  // Determine animation class: listening takes priority over speaking
+  const animationClass = listening ? "owl-listening" : speaking ? "owl-talking" : "";
 
   // Split placement from animation: the OUTER div owns positioning (its
   // -translate offsets sit the owl on the image's bottom edge), while the INNER
@@ -55,7 +61,7 @@ export default function OwlAvatar({
         className={
           "relative h-full w-full overflow-hidden rounded-full border-4 border-white " +
           "bg-amber-50 shadow-lg dark:border-zinc-800 dark:bg-zinc-800 " +
-          (speaking ? "owl-talking" : "")
+          animationClass
         }
       >
         <Image
