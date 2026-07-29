@@ -15,6 +15,9 @@ interface StoryGeneratorProps {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+const MIN_CHARS = 50;
+const MAX_CHARS = 3000;
+
 const SAMPLE_STORIES = [
   {
     title: "The Lost Puppy",
@@ -60,14 +63,18 @@ export default function StoryGenerator({ sectionRef }: StoryGeneratorProps) {
     CONTENT_LEVELS.find((l) => l.value === contentLevel) ?? CONTENT_LEVELS[1];
 
   const charCount = story.trim().length;
-  const isValid = charCount >= 50;
+  const isValid = charCount >= MIN_CHARS && charCount <= MAX_CHARS;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!isValid) {
-      setErrorMessage("Please enter at least 50 characters for your story.");
+    if (charCount < MIN_CHARS) {
+      setErrorMessage(`Please enter at least ${MIN_CHARS} characters for your story.`);
+      return;
+    }
+    if (charCount > MAX_CHARS) {
+      setErrorMessage(`Story is too long. Please keep it under ${MAX_CHARS.toLocaleString()} characters.`);
       return;
     }
 
@@ -117,10 +124,15 @@ export default function StoryGenerator({ sectionRef }: StoryGeneratorProps) {
                   Your Story Text
                 </label>
                 <span className="text-xs font-semibold text-gray-500">
-                  {charCount} characters{" "}
-                  {charCount > 0 && !isValid && (
+                  {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()} characters
+                  {charCount > 0 && charCount < MIN_CHARS && (
                     <span className="text-accent-coral ml-1">
-                      (minimum 50 required)
+                      (minimum {MIN_CHARS} required)
+                    </span>
+                  )}
+                  {charCount > MAX_CHARS && (
+                    <span className="text-accent-coral ml-1">
+                      (over limit)
                     </span>
                   )}
                 </span>

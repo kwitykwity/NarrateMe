@@ -12,9 +12,13 @@ router = APIRouter(prefix="/api", tags=["scenes"])
 async def create_scenes(request: StoryRequest):
     logger.info(f"POST /api/scenes - Received request with story length: {len(request.story)}")
 
-    if len(request.story.strip()) < 50:
+    story_length = len(request.story.strip())
+    if story_length < 50:
         logger.warning("Story too short, returning 400")
         raise HTTPException(status_code=400, detail="Story must be at least 50 characters")
+    if story_length > 3000:
+        logger.warning("Story too long, returning 400")
+        raise HTTPException(status_code=400, detail="Story must be at most 3,000 characters")
 
     try:
         scenes = await split_story_into_scenes(request.story, content_level=request.content_level)
