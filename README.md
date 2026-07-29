@@ -13,7 +13,7 @@ NarrateMe helps teachers and parents of kids in grades 1–3 turn any plain writ
 ### Implementation Status
 
 **Working today:**
-- Story input UI — paste/type, sample stories, 50-character minimum
+- Story input UI — paste/type, sample stories, 50–3,000 character limits
 - Scene splitting via Claude → structured JSON with a persistent character description reused across scenes
 - Per-scene illustration via an OpenAI image model, using the shared character prompt for consistency
 - Per-scene narration via ElevenLabs, returned as an inline audio player on each scene card
@@ -28,6 +28,10 @@ NarrateMe helps teachers and parents of kids in grades 1–3 turn any plain writ
   - Reading prompts after scenes ("What do you think happens next?")
   - Comprehension checks with answer hints for grown-ups
 - Content safety guardrails — softens mature content for young readers or blocks unsuitable stories
+- PIN-gated parent settings — content level, auto-play, and engagement prompts behind a 4-digit PIN so children can't change their own safety limits
+- Owl mentor voice — engagement prompts use a distinct British voice (George) separate from the narrator (Sarah)
+- Speech recognition for comprehension checks — children can answer questions by speaking
+- Mock profile menu — owl avatar in header opens an account menu (UI only, no auth)
 - Backend hardening — request timeouts (60s scenes / 120s images / 60s narration), structured logging, API-key validation, `504` on timeout
 
 **Known gap:** OpenAI's per-image latency is highly variable (~40s nominal, but can climb past the 120s backend timeout under throttling). Generation is concurrent (capped at 2 in flight), so total time scales with the slowest image rather than the sum; a slow outlier returns `504`, after which the frontend retries once and, if that also fails, shows a per-scene error card.

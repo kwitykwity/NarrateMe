@@ -45,7 +45,7 @@ Location: `backend/`
 - `ImageResponse` - Output: `{ image_url: string }`
 
 **Error handling:**
-- `400` - invalid input (story < 50 chars, prompt < 10 chars)
+- `400` - invalid input (story < 50 or > 3,000 chars, prompt < 10 chars)
 - `500` - upstream/API failure (generic message to client; full error logged server-side)
 - `504` - upstream call exceeded the timeout
 
@@ -57,7 +57,7 @@ Location: `frontend/`
 - `/presentation` - Full presentation player: per-scene card (illustration + text), Previous/Next navigation, and live image-generation progress
 
 **UI Flow:**
-1. User enters/pastes story (min 50 chars) and clicks "Create Presentation"
+1. User enters/pastes story (50–3,000 chars) and clicks "Create Presentation"
 2. Story is saved to `sessionStorage` (key `narrateme:story`) and the app routes to `/presentation`
 3. Presentation page reads the story, calls `POST /api/scenes`, then calls `POST /api/images` for the scenes' `image_prompt`s concurrently
 4. Scene cards render as images arrive; user navigates scene by scene
@@ -78,11 +78,18 @@ Location: `frontend/`
 - Engagement prompts (sound cues, reading prompts, comprehension checks)
 - Content-safety guardrail with a parental content level (`strict` / `moderate` / `original`)
 - Marketing landing page (`/`), with stats and email subscription
+- PIN-gated parent settings — content level, auto-play, and engagement prompts behind a 4-digit PIN (default `1234`)
+- Owl mentor voice — engagement prompts use a distinct British voice (George) separate from the narrator (Sarah)
+- Speech recognition for comprehension checks — children can answer by speaking
+- Mock profile menu — owl avatar in header opens an account menu (UI only)
+- 3,000 character limit for story input — prevents abuse and keeps generation fast
 
 ## What's NOT Built Yet
-- A live-key run of the content-safety evals — the contract is verified offline,
-  but the model's judgment is not. See `EVAL_CARD.md`.
 - Persistent storage (still stateless; landing-page data goes to JSON files under `backend/data/`)
+- User authentication (profile menu is UI-only mock)
+
+**Completed since last update:**
+- Live-key content-safety eval run — all 3 cases pass against production (see `EVAL_CARD.md`)
 
 **Known gap:** image generation is now concurrent (capped at 3), so total time
 scales with the slowest image rather than the sum. However, OpenAI's per-image
